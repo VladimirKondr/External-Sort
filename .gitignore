@@ -124,5 +124,4 @@ input.bin
 output.bin
 
 external_sort_merged.cpp
-merge_external_sort.py
 compile_commands.json
