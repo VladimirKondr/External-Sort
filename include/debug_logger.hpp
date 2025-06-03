@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <iostream>
+#include <cstddef>
 #include <string>
 
 namespace external_sort::debug {
@@ -16,24 +16,18 @@ namespace external_sort::debug {
  * @brief ANSI цветовые коды для терминала
  */
 namespace colors {
-constexpr const char* RESET = "\033[0m";
-constexpr const char* GREEN = "\033[32m";
-constexpr const char* YELLOW = "\033[33m";
-constexpr const char* RED = "\033[31m";
-constexpr const char* BLUE = "\033[34m";
-constexpr const char* CYAN = "\033[36m";
+constexpr const char* kReset = "\033[0m";
+constexpr const char* kGreen = "\033[32m";
+constexpr const char* kYellow = "\033[33m";
+constexpr const char* kRed = "\033[31m";
+constexpr const char* kBlue = "\033[34m";
+constexpr const char* kCyan = "\033[36m";
 }  // namespace colors
 
 /**
  * @brief Уровни логирования
  */
-enum class LogLevel {
-    INFO,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    DBG
-};
+enum class LogLevel { INFO, SUCCESS, WARNING, ERROR, DBG };
 
 /**
  * @brief Получить цветовой код для уровня логирования
@@ -42,15 +36,15 @@ inline const char* GetColorCode(LogLevel level) {
     switch (level) {
         case LogLevel::INFO:
         case LogLevel::SUCCESS:
-            return colors::GREEN;
+            return colors::kGreen;
         case LogLevel::WARNING:
-            return colors::YELLOW;
+            return colors::kYellow;
         case LogLevel::ERROR:
-            return colors::RED;
+            return colors::kRed;
         case LogLevel::DBG:
-            return colors::CYAN;
+            return colors::kCyan;
         default:
-            return colors::RESET;
+            return colors::kReset;
     }
 }
 
@@ -80,49 +74,49 @@ inline const char* GetLevelPrefix(LogLevel level) {
 inline std::string ExtractFunctionName(const char* func) {
     std::string func_str(func);
 
-    size_t gcc_suffix_pos = func_str.find(" [with");
+    const size_t gcc_suffix_pos = func_str.find(" [with");
     if (gcc_suffix_pos != std::string::npos) {
         func_str.erase(gcc_suffix_pos);
     }
 
-    size_t space_pos = func_str.find_last_of(' ');
+    const size_t space_pos = func_str.find_last_of(' ');
     if (space_pos != std::string::npos) {
-        size_t paren_pos_check = func_str.find('(', space_pos);
+        const size_t paren_pos_check = func_str.find('(', space_pos);
         if (paren_pos_check != std::string::npos) {
             func_str = func_str.substr(space_pos + 1);
         }
     }
-    
-    size_t paren_pos = func_str.find('(');
+
+    const size_t paren_pos = func_str.find('(');
     if (paren_pos != std::string::npos) {
         func_str = func_str.substr(0, paren_pos);
     }
-    
-    size_t template_pos = func_str.rfind('<');
-    size_t scope_pos = func_str.rfind("::");
+
+    const size_t template_pos = func_str.rfind('<');
+    const size_t scope_pos = func_str.rfind("::");
 
     if (template_pos != std::string::npos) {
         if (scope_pos == std::string::npos || template_pos > scope_pos) {
-            size_t closing_template_pos = func_str.rfind('>');
+            const size_t closing_template_pos = func_str.rfind('>');
             if (closing_template_pos != std::string::npos && closing_template_pos > template_pos) {
-                 bool nested = false;
-                 for(size_t i = template_pos + 1; i < closing_template_pos; ++i) {
-                     if (func_str[i] == '<' || func_str[i] == '>') {
-                         nested = true;
-                         break;
-                     }
-                 }
-                 if (!nested) {
+                bool nested = false;
+                for (size_t i = template_pos + 1; i < closing_template_pos; ++i) {
+                    if (func_str[i] == '<' || func_str[i] == '>') {
+                        nested = true;
+                        break;
+                    }
+                }
+                if (!nested) {
                     func_str = func_str.substr(0, template_pos);
-                 }
+                }
             }
         }
     }
-    
+
     return func_str;
 }
 
-} // namespace external_sort::debug
+}  // namespace external_sort::debug
 
 #ifdef DEBUG
 /**
@@ -130,10 +124,10 @@ inline std::string ExtractFunctionName(const char* func) {
  * @param level Уровень логирования (LogLevel)
  * @param x Выражение для вывода
  */
-#define DEBUG_COUT_LEVEL(level, x)                                                         \
-    std::cout << external_sort::debug::GetColorCode(level)                                 \
-              << external_sort::debug::GetLevelPrefix(level) << " "                        \
-              << " in " << external_sort::debug::ExtractFunctionName(__PRETTY_FUNCTION__)  \
+#define DEBUG_COUT_LEVEL(level, x)                                                        \
+    std::cout << external_sort::debug::GetColorCode(level)                                \
+              << external_sort::debug::GetLevelPrefix(level) << " "                       \
+              << " in " << external_sort::debug::ExtractFunctionName(__PRETTY_FUNCTION__) \
               << "()] " << x << external_sort::debug::colors::RESET
 
 /**

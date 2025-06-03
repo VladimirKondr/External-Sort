@@ -28,8 +28,7 @@ void WriteNum(std::ostream& out, uint64_t num) {
  * @param max_val Maximum value in range (inclusive)
  * @return Vector containing the generated values
  */
-std::vector<uint64_t> GenerateRandomVector(
-    int n, uint64_t min_val = 1, uint64_t max_val = 100) {
+std::vector<uint64_t> GenerateRandomVector(int n, uint64_t min_val = 1, uint64_t max_val = 100) {
     std::vector<uint64_t> vec(n);
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -65,8 +64,10 @@ int main(int argc, char* argv[]) {
     uint64_t min_val = 1;
     uint64_t max_val = 1'000'000;
     bool shuffle = true;
-    
-    if (argc > 1) output_filename = argv[1];
+
+    if (argc > 1) {
+        output_filename = argv[1];
+    }
     if (argc > 2) {
         try {
             num_elements = std::stoi(argv[2]);
@@ -91,14 +92,15 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
-    
+
     try {
         std::ofstream out(output_filename, std::ios::binary);
         if (!out) {
-            std::cerr << "Error: Could not open file " << output_filename << " for writing." << std::endl;
+            std::cerr << "Error: Could not open file " << output_filename << " for writing."
+                      << std::endl;
             return 1;
         }
-        
+
         std::vector<uint64_t> data = GenerateRandomVector(num_elements, min_val, max_val);
         if (shuffle) {
             ShuffleVector(data);
@@ -106,17 +108,16 @@ int main(int argc, char* argv[]) {
 
         uint64_t n = data.size();
         WriteNum(out, n);
-        
+
         for (uint64_t val : data) {
             WriteNum(out, val);
         }
 
         out.close();
-        std::cout << "Created " << output_filename << " with " << n << " numbers in range [" 
+        std::cout << "Created " << output_filename << " with " << n << " numbers in range ["
                   << min_val << ", " << max_val << "]" << std::endl;
         return 0;
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }

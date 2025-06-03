@@ -8,14 +8,12 @@
 #include "file_stream.hpp"
 #include "k_way_merge_sorter.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
 
 namespace es = external_sort;
-
-
 
 int main() {
     std::ios_base::sync_with_stdio(false);

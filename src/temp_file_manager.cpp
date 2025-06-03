@@ -14,7 +14,6 @@
 
 namespace external_sort {
 
-
 TempFileManager::TempFileManager(const std::string& base_dir_name) {
     base_temp_dir_path_ = std::filesystem::current_path() / base_dir_name;
     if (!std::filesystem::exists(base_temp_dir_path_)) {
@@ -37,7 +36,8 @@ TempFileManager::TempFileManager(const std::string& base_dir_name) {
 }
 
 TempFileManager::~TempFileManager() {
-    DEBUG_COUT_INFO("TempFileManager destructor: Attempting to clean up temporary directory..." << std::endl);
+    DEBUG_COUT_INFO(
+        "TempFileManager destructor: Attempting to clean up temporary directory..." << std::endl);
     if (owns_directory_ && std::filesystem::exists(base_temp_dir_path_)) {
         std::error_code ec;
         std::filesystem::remove_all(base_temp_dir_path_, ec);
@@ -51,9 +51,10 @@ TempFileManager::~TempFileManager() {
                 << base_temp_dir_path_ << std::endl);
         }
     } else if (std::filesystem::exists(base_temp_dir_path_)) {
-         DEBUG_COUT_INFO(
+        DEBUG_COUT_INFO(
             "TempFileManager: Temporary directory "
-            << base_temp_dir_path_ << " exists but was not created by this instance, not removing." << std::endl);
+            << base_temp_dir_path_ << " exists but was not created by this instance, not removing."
+            << std::endl);
     }
 }
 
@@ -71,15 +72,15 @@ void TempFileManager::CleanupFile(const std::string& filename_str) {
         std::error_code ec;
         std::filesystem::remove(file_path, ec);
         if (ec) {
-             DEBUG_COUT_WARNING("CleanupFile failed to remove " << filename_str << ": " << ec.message() << std::endl);
+            DEBUG_COUT_WARNING(
+                "CleanupFile failed to remove "
+                << filename_str << ": " << ec.message() << std::endl);
         }
     }
 }
 
-
 const std::filesystem::path& TempFileManager::GetBaseDirPath() const {
     return base_temp_dir_path_;
 }
-
 
 }  // namespace external_sort

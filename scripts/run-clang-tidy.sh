@@ -1,14 +1,34 @@
 #!/bin/bash
 
-set -e
+# Скрипт для запуска clang-tidy для анализа и исправления C++ кода
+# Использование: ./scripts/run-clang-tidy.sh [--fix] [--file <файл>] [--help]
 
-echo "Запуск clang-tidy анализа..."
+
+set -e
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+
+show_help() {
+    echo -e "${BLUE}Использование:${NC}"
+    echo -e "  ${YELLOW}$0${NC}                     - только анализ"
+    echo -e "  ${YELLOW}$0 --fix${NC}              - анализ и исправление"
+    echo -e "  ${YELLOW}$0 --file <файл>${NC}      - анализ конкретного файла"
+    echo -e "  ${YELLOW}$0 --fix --file <файл>${NC} - исправление конкретного файла"
+    echo -e "  ${YELLOW}$0 --help${NC}             - показать эту справку"
+    exit 0
+}
+
+for arg in "$@"; do
+    if [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+        show_help
+    fi
+done
+
+echo "Запуск clang-tidy анализа..."
 
 if [ ! -f "compile_commands.json" ]; then
     echo -e "${YELLOW}  compile_commands.json не найден, генерируем...${NC}"
@@ -117,9 +137,3 @@ if [ "$FIX_MODE" = true ]; then
 else
     echo -e "${GREEN} Анализ clang-tidy завершен!${NC}"
 fi
-
-echo -e "${BLUE} Использование:${NC}"
-echo -e "  ${YELLOW}$0${NC}                     - только анализ"
-echo -e "  ${YELLOW}$0 --fix${NC}              - анализ и исправление"
-echo -e "  ${YELLOW}$0 --file <файл>${NC}      - анализ конкретного файла"
-echo -e "  ${YELLOW}$0 --fix --file <файл>${NC} - исправление конкретного файла"

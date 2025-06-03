@@ -117,6 +117,8 @@ docs/_build/
 .clangd/
 .clangd
 .clang-tidy-ignore
+.clangd-ignore
+.clangd
 
 input.bin
 output.bin

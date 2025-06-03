@@ -24,7 +24,7 @@ class TempFileManager {
    private:
     std::filesystem::path base_temp_dir_path_;  ///< Базовая директория для временных файлов
     uint64_t temp_file_counter_ = 0;            ///< Счетчик для генерации уникальных имен
-    bool owns_directory_{};                              ///< Флаг владения директорией
+    bool owns_directory_{};                     ///< Флаг владения директорией
 
    public:
     /**
