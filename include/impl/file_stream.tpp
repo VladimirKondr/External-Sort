@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "serializers.hpp"
+
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
@@ -31,10 +33,24 @@ void FileInputStream<T>::FillBufferInternal() {
         has_valid_value_ = false;
         return;
     }
+
     buffer_.Clear();
-    uint64_t elements_actually_read =
-        fread(buffer_.RawDataPtr(), sizeof(T), elements_to_read_this_pass, file_ptr_);
-    buffer_.SetValidElementsCount(elements_actually_read);
+
+    uint64_t elements_actually_read = 0;
+    if constexpr (PodSerializable<T>) {
+        elements_actually_read =
+            fread(buffer_.RawDataPtr(), sizeof(T), elements_to_read_this_pass, file_ptr_);
+        buffer_.SetValidElementsCount(elements_actually_read);
+    } else {
+        for (uint64_t i = 0; i < elements_to_read_this_pass; ++i) {
+            T element;
+            if (!serializer_member_->deserialize(element, file_ptr_)) {
+                break;
+            }
+            buffer_.PushBack(element);
+            elements_actually_read++;
+        }
+    }
 
     if (elements_actually_read < elements_to_read_this_pass && !feof(file_ptr_)) {
         if (ferror(file_ptr_)) {
@@ -54,6 +70,9 @@ void FileInputStream<T>::FillBufferInternal() {
 template <typename T>
 FileInputStream<T>::FileInputStream(const StorageId& filename, uint64_t buffer_capacity_elements)
     : id_(filename), buffer_(buffer_capacity_elements) {
+    if constexpr (!PodSerializable<T>) {
+        serializer_member_ = create_serializer<T>();
+    }
     file_ptr_ = fopen(id_.c_str(), "rb");
     if (!file_ptr_) {
         throw std::runtime_error("FileInputStream: Cannot open input file: " + id_);
@@ -100,7 +119,8 @@ FileInputStream<T>::FileInputStream(FileInputStream&& other) noexcept
     , total_elements_read_(other.total_elements_read_)
     , is_exhausted_(other.is_exhausted_)
     , current_value_(std::move(other.current_value_))
-    , has_valid_value_(other.has_valid_value_) {
+    , has_valid_value_(other.has_valid_value_)
+    , serializer_member_(std::move(other.serializer_member_)) {
     other.file_ptr_ = nullptr;
 }
 
@@ -118,6 +138,7 @@ FileInputStream<T>& FileInputStream<T>::operator=(FileInputStream&& other) noexc
         is_exhausted_ = other.is_exhausted_;
         current_value_ = std::move(other.current_value_);
         has_valid_value_ = other.has_valid_value_;
+        serializer_member_ = std::move(other.serializer_member_);
         other.file_ptr_ = nullptr;
     }
     return *this;
@@ -170,10 +191,25 @@ void FileOutputStream<T>::FlushBufferInternal() {
     if (buffer_.IsEmpty() || !file_ptr_ || finalized_) {
         return;
     }
-    uint64_t written = fwrite(buffer_.Data(), sizeof(T), buffer_.Size(), file_ptr_);
-    if (written != buffer_.Size()) {
+
+    uint64_t successful_writes = 0;
+    if constexpr (PodSerializable<T>) {
+        successful_writes = fwrite(buffer_.Data(), sizeof(T), buffer_.Size(), file_ptr_);
+    } else {
+        const T* data = buffer_.Data();
+        for (uint64_t i = 0; i < buffer_.Size(); ++i) {
+            if (!serializer_member_->serialize(data[i], file_ptr_)) {
+                throw std::runtime_error(
+                    "FileOutputStream: Failed to serialize element to file: " + id_);
+            }
+            successful_writes++;
+        }
+    }
+
+    if (successful_writes != buffer_.Size()) {
         throw std::runtime_error("FileOutputStream: Failed to write full buffer to file: " + id_);
     }
+
     DEBUG_COUT_SUCCESS(
         "FileOutputStream: Flushed " << buffer_.Size() << " elements to " << id_ << std::endl);
     buffer_.Clear();
@@ -182,6 +218,9 @@ void FileOutputStream<T>::FlushBufferInternal() {
 template <typename T>
 FileOutputStream<T>::FileOutputStream(const StorageId& filename, uint64_t buffer_capacity_elements)
     : id_(filename), buffer_(buffer_capacity_elements) {
+    if constexpr (!PodSerializable<T>) {
+        serializer_member_ = create_serializer<T>();
+    }
     file_ptr_ = fopen(id_.c_str(), "wb");
     if (!file_ptr_) {
         throw std::runtime_error("FileOutputStream: Cannot open output file: " + id_);
@@ -209,7 +248,8 @@ FileOutputStream<T>::FileOutputStream(FileOutputStream&& other) noexcept
     , file_ptr_(other.file_ptr_)
     , buffer_(std::move(other.buffer_))
     , total_elements_written_(other.total_elements_written_)
-    , finalized_(other.finalized_) {
+    , finalized_(other.finalized_)
+    , serializer_member_(std::move(other.serializer_member_)) {
     other.file_ptr_ = nullptr;
     other.finalized_ = true;
 }
@@ -223,6 +263,7 @@ FileOutputStream<T>& FileOutputStream<T>::operator=(FileOutputStream&& other) no
         buffer_ = std::move(other.buffer_);
         total_elements_written_ = other.total_elements_written_;
         finalized_ = other.finalized_;
+        serializer_member_ = std::move(other.serializer_member_);
         other.file_ptr_ = nullptr;
         other.finalized_ = true;
     }
@@ -286,12 +327,14 @@ std::unique_ptr<IInputStream<T>> FileStreamFactory<T>::CreateInputStream(
 }
 
 template <typename T>
+
 std::unique_ptr<IOutputStream<T>> FileStreamFactory<T>::CreateOutputStream(
     const StorageId& id, uint64_t buffer_capacity_elements) {
     return std::make_unique<FileOutputStream<T>>(id, buffer_capacity_elements);
 }
 
 template <typename T>
+
 std::unique_ptr<IOutputStream<T>> FileStreamFactory<T>::CreateTempOutputStream(
     StorageId& out_temp_id, uint64_t buffer_capacity_elements) {
     out_temp_id = temp_file_manager_.GenerateTempFilename("r", ".b");
@@ -299,11 +342,13 @@ std::unique_ptr<IOutputStream<T>> FileStreamFactory<T>::CreateTempOutputStream(
 }
 
 template <typename T>
+
 void FileStreamFactory<T>::DeleteStorage(const StorageId& id) {
     temp_file_manager_.CleanupFile(id);
 }
 
 template <typename T>
+
 void FileStreamFactory<T>::MakeStoragePermanent(
     const StorageId& temp_id, const StorageId& final_id) {
     if (temp_id == final_id) {
@@ -331,11 +376,13 @@ void FileStreamFactory<T>::MakeStoragePermanent(
 }
 
 template <typename T>
+
 bool FileStreamFactory<T>::StorageExists(const StorageId& id) const {
     return std::filesystem::exists(id);
 }
 
 template <typename T>
+
 StorageId FileStreamFactory<T>::GetTempStorageContextId() const {
     return temp_file_manager_.GetBaseDirPath().string();
 }

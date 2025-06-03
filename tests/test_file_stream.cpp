@@ -61,7 +61,7 @@ TEST_F(FileStreamTest, OutputStreamWriteAndFinalize) {
         EXPECT_EQ(output->GetTotalElementsWritten(), 0);
         EXPECT_EQ(output->GetId(), test_file);
 
-        for (size_t i = 0; i < test_data.size(); ++i) {
+        for (uint64_t i = 0; i < test_data.size(); ++i) {
             output->Write(test_data[i]);
             EXPECT_EQ(output->GetTotalElementsWritten(), i + 1);
         }
@@ -114,22 +114,68 @@ TEST_F(FileStreamTest, EmptyFile) {
  */
 TEST_F(FileStreamTest, SmallBufferWrite) {
     const std::vector<int> test_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    const std::string filename_str = test_file;
 
-    auto output = factory->CreateOutputStream(test_file, 2);
+    {
+        auto output = factory->CreateOutputStream(test_file, 2);
+        ASSERT_NE(output, nullptr);
 
-    for (int value : test_data) {
-        output->Write(value);
-    }
-    output->Finalize();
-
-    auto input = factory->CreateInputStream(test_file, 100);
-    std::vector<int> read_data;
-    while (!input->IsExhausted()) {
-        read_data.push_back(input->Value());
-        input->Advance();
+        for (int value : test_data) {
+            output->Write(value);
+        }
+        output->Finalize();
     }
 
-    EXPECT_EQ(read_data, test_data);
+    {
+        std::ifstream raw_file_check(filename_str, std::ios::binary);
+        ASSERT_TRUE(raw_file_check.is_open())
+            << "Failed to open file for raw check: " << filename_str;
+
+        uint64_t num_elements_in_file_header = 0;
+        raw_file_check.read(
+            reinterpret_cast<char*>(&num_elements_in_file_header), sizeof(uint64_t));
+
+        ASSERT_FALSE(raw_file_check.fail()) << "Failed to read header from raw file.";
+        ASSERT_EQ(num_elements_in_file_header, test_data.size()) << "Header mismatch in raw file.";
+
+        std::vector<int> raw_read_data;
+        raw_read_data.reserve(test_data.size());
+        for (uint64_t i = 0; i < test_data.size(); ++i) {
+            int element;
+            raw_file_check.read(reinterpret_cast<char*>(&element), sizeof(int));
+            if (raw_file_check.fail() || (raw_file_check.eof() && i < test_data.size() - 1)) {
+                FAIL() << "Failed to read element " << i << " from raw file. "
+                       << "EOF: " << raw_file_check.eof() << " Fail: " << raw_file_check.fail()
+                       << " Bad: " << raw_file_check.bad();
+            }
+            raw_read_data.push_back(element);
+        }
+
+        EXPECT_EQ(raw_read_data, test_data) << "Data mismatch during raw file check.";
+
+        char dummy;
+        raw_file_check.read(&dummy, 1);
+        EXPECT_TRUE(raw_file_check.eof())
+            << "File contains more data than expected after raw check.";
+
+        raw_file_check.close();
+    }
+
+    {
+        auto input = factory->CreateInputStream(test_file, 100);
+        ASSERT_NE(input, nullptr);
+
+        std::vector<int> read_data_via_stream;
+        while (!input->IsExhausted()) {
+            read_data_via_stream.push_back(input->Value());
+            input->Advance();
+        }
+
+        EXPECT_EQ(read_data_via_stream.size(), test_data.size())
+            << "Mismatch in number of elements read via FileInputStream.";
+        EXPECT_EQ(read_data_via_stream, test_data)
+            << "Data mismatch when reading via FileInputStream.";
+    }
 }
 
 /**
@@ -216,11 +262,11 @@ TEST_F(FileStreamTest, NonExistentFileError) {
  * @brief Тест больших данных
  */
 TEST_F(FileStreamTest, LargeData) {
-    const size_t large_size = 10'000;
+    const uint64_t large_size = 10'000;
     std::vector<int> large_data;
     large_data.reserve(large_size);
 
-    for (size_t i = 0; i < large_size; ++i) {
+    for (uint64_t i = 0; i < large_size; ++i) {
         large_data.push_back(static_cast<int>(i));
     }
 
@@ -271,7 +317,7 @@ TEST(FileStreamGenericTest, DifferentTypes) {
         }
 
         EXPECT_EQ(read_data.size(), test_data.size());
-        for (size_t i = 0; i < test_data.size(); ++i) {
+        for (uint64_t i = 0; i < test_data.size(); ++i) {
             EXPECT_DOUBLE_EQ(read_data[i], test_data[i]);
         }
     }
