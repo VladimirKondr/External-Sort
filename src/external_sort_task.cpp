@@ -31,7 +31,7 @@ int main() {
     const uint64_t sizeof_element = sizeof(uint64_t);
 
     const uint64_t TOTAL_MEMORY_LIMIT_BYTES = 1024 * KB;
-    const uint64_t ESTIMATED_BASE_OVERHEAD_BYTES = 970 * KB;
+    const uint64_t ESTIMATED_BASE_OVERHEAD_BYTES = 990 * KB;
 
     uint64_t total_dynamic_budget =
         TOTAL_MEMORY_LIMIT_BYTES > ESTIMATED_BASE_OVERHEAD_BYTES
