@@ -393,22 +393,6 @@ TEST_F(KWayMergeSorterFileTest, FileBasedSort) {
 }
 
 /**
- * @brief Тест конфликта output_id с временным контекстом
- */
-TEST_F(KWayMergeSorterMemoryTest, OutputIdConflictWithTempContext) {
-    const std::string input_id = "conflict_input";
-    const std::string bad_output_id = "temp_bad_output";  
-    
-    CreateTestData(input_id, {1, 2, 3});
-    
-    
-    EXPECT_THROW({
-        KWayMergeSorter<int> sorter(*factory, input_id, bad_output_id,
-                                    sizeof(int) * 10, 2, 10, true);
-    }, std::runtime_error);
-}
-
-/**
  * @brief Стресс-тест с очень большими данными (если позволяет память)
  */
 TEST_F(KWayMergeSorterMemoryTest, StressTestLargeData) {

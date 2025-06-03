@@ -25,6 +25,8 @@ bazel.build_settings.json
 clang-tidy
 clang-format
 
+input.bin
+output.bin
 
 external_sort_merged.cpp
 merge_external_sort.py

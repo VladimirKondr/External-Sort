@@ -14,7 +14,7 @@ cc_library(
     ]),
     srcs = glob(
         ["src/**/*.cpp"],
-        exclude = ["src/demo.cpp", "src/main.cpp", "src/external_sort_task.cpp", "src/create_test_input.cpp", "src/create_sample_input.cpp"]
+        exclude = ["src/demo.cpp", "src/main.cpp", "src/external_sort_task.cpp", "src/create_test_input.cpp", "src/create_random_test.cpp"]
     ),
     deps = [":element_buffer"],
     includes = ["include"],

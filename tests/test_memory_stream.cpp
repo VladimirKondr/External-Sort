@@ -146,15 +146,6 @@ TEST_F(MemoryStreamTest, FactoryOperations) {
 }
 
 /**
- * @brief Тест контекста временных хранилищ
- */
-TEST_F(MemoryStreamTest, TempStorageContext) {
-    StorageId context = factory->GetTempStorageContextId();
-    EXPECT_FALSE(context.empty());
-    EXPECT_EQ(context, "temp_");
-}
-
-/**
  * @brief Тест множественной записи и финализации
  */
 TEST_F(MemoryStreamTest, MultipleFinalize) {

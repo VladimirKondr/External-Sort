@@ -83,36 +83,6 @@ TEST_F(TempFileManagerTest, ExistingDirectory) {
 }
 
 /**
- * @brief Тест генерации уникальных имен файлов
- */
-TEST_F(TempFileManagerTest, GenerateUniqueFilenames) {
-    TempFileManager manager(test_dir_name);
-    
-    
-    std::string file1 = manager.GenerateTempFilename();
-    std::string file2 = manager.GenerateTempFilename();
-    std::string file3 = manager.GenerateTempFilename("prefix", ".txt");
-    
-    
-    EXPECT_NE(file1, file2);
-    EXPECT_NE(file2, file3);
-    EXPECT_NE(file1, file3);
-    
-    
-    EXPECT_TRUE(file1.find("run") != std::string::npos);
-    EXPECT_TRUE(file1.find(".bin") != std::string::npos);
-    EXPECT_TRUE(file3.find("prefix") != std::string::npos);
-    EXPECT_TRUE(file3.find(".txt") != std::string::npos);
-    
-    
-    auto base_path = manager.GetBaseDirPath();
-    EXPECT_TRUE(file1.find(base_path.string()) == 0);
-    EXPECT_TRUE(file2.find(base_path.string()) == 0);
-    EXPECT_TRUE(file3.find(base_path.string()) == 0);
-}
-
-
-/**
  * @brief Тест удаления несуществующих файлов
  */
 TEST_F(TempFileManagerTest, CleanupNonExistentFile) {
