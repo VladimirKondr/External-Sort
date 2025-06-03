@@ -131,3 +131,59 @@ sh_binary(
         "tests/**/*.cpp"
     ]),
 )
+
+# Новые тесты сериализации
+cc_test(
+    name = "pod_serialization_test",
+    srcs = ["tests/pod_serialization_test.cpp"],
+    deps = [
+        ":external_sort_lib",
+        "@googletest//:gtest_main",
+    ],
+    copts = ["-std=c++20"],
+    size = "medium",
+)
+
+cc_test(
+    name = "method_serialization_test", 
+    srcs = ["tests/method_serialization_test.cpp"],
+    deps = [
+        ":external_sort_lib",
+        "@googletest//:gtest_main",
+    ],
+    copts = ["-std=c++20"],
+    size = "medium",
+)
+
+cc_test(
+    name = "external_adl_serialization_test",
+    srcs = ["tests/external_adl_serialization_test.cpp"],
+    deps = [
+        ":external_sort_lib",
+        "@googletest//:gtest_main",
+    ],
+    copts = ["-std=c++20"],
+    size = "medium",
+)
+
+cc_test(
+    name = "serializers_concepts_validation_test",
+    srcs = ["tests/serializers_concepts_validation_test.cpp"],
+    deps = [
+        ":external_sort_lib",
+        "@googletest//:gtest_main",
+    ],
+    copts = ["-std=c++20"],
+    size = "medium",
+)
+
+# Группировка всех тестов сериализации
+test_suite(
+    name = "serialization_tests",
+    tests = [
+        ":pod_serialization_test",
+        ":method_serialization_test", 
+        ":external_adl_serialization_test",
+        ":serializers_concepts_validation_test",
+    ],
+)

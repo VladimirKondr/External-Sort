@@ -48,7 +48,7 @@ TEST_F(MemoryStreamTest, OutputStreamWriteAndFinalize) {
         EXPECT_EQ(output->GetTotalElementsWritten(), 0);
         EXPECT_EQ(output->GetId(), storage_id);
 
-        for (size_t i = 0; i < test_data.size(); ++i) {
+        for (uint64_t i = 0; i < test_data.size(); ++i) {
             output->Write(test_data[i]);
             EXPECT_EQ(output->GetTotalElementsWritten(), i + 1);
         }
@@ -162,11 +162,11 @@ TEST_F(MemoryStreamTest, NonExistentStorageError) {
  */
 TEST_F(MemoryStreamTest, LargeData) {
     const std::string storage_id = "large_data_test";
-    const size_t large_size = 10'000;
+    const uint64_t large_size = 10'000;
     std::vector<int> large_data;
     large_data.reserve(large_size);
 
-    for (size_t i = 0; i < large_size; ++i) {
+    for (uint64_t i = 0; i < large_size; ++i) {
         large_data.push_back(static_cast<int>(i));
     }
 
@@ -282,7 +282,7 @@ TEST(MemoryStreamGenericTest, DifferentTypes) {
         }
 
         EXPECT_EQ(read_data.size(), test_data.size());
-        for (size_t i = 0; i < test_data.size(); ++i) {
+        for (uint64_t i = 0; i < test_data.size(); ++i) {
             EXPECT_DOUBLE_EQ(read_data[i], test_data[i]);
         }
     }

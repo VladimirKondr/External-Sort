@@ -9,6 +9,7 @@
 
 #include "element_buffer.hpp"
 #include "interfaces.hpp"
+#include "serializers.hpp"
 #include "temp_file_manager.hpp"
 
 #include <cstdint>
@@ -31,14 +32,15 @@ namespace external_sort {
 template <typename T>
 class FileInputStream : public IInputStream<T> {
    private:
-    StorageId id_;                         ///< Имя файла
-    FILE* file_ptr_ = nullptr;             ///< Указатель на файл
-    ElementBuffer<T> buffer_;              ///< Буфер для чтения
-    uint64_t total_elements_in_file_ = 0;  ///< Общее количество элементов в файле
-    uint64_t total_elements_read_ = 0;     ///< Количество прочитанных элементов
-    bool is_exhausted_ = false;            ///< Флаг исчерпания потока
-    T current_value_{};                    ///< Текущий элемент
-    bool has_valid_value_ = false;         ///< Флаг валидности текущего элемента
+    StorageId id_;                                        ///< Имя файла
+    FILE* file_ptr_ = nullptr;                            ///< Указатель на файл
+    ElementBuffer<T> buffer_;                             ///< Буфер для чтения
+    uint64_t total_elements_in_file_ = 0;                 ///< Общее количество элементов в файле
+    uint64_t total_elements_read_ = 0;                    ///< Количество прочитанных элементов
+    bool is_exhausted_ = false;                           ///< Флаг исчерпания потока
+    T current_value_{};                                   ///< Текущий элемент
+    bool has_valid_value_ = false;                        ///< Флаг валидности текущего элемента
+    std::unique_ptr<Serializer<T>> serializer_member_{};  ///< Сериализатор для элементов
 
     /**
      * @brief Заполняет внутренний буфер данными из файла
@@ -101,11 +103,12 @@ class FileInputStream : public IInputStream<T> {
 template <typename T>
 class FileOutputStream : public IOutputStream<T> {
    private:
-    StorageId id_;                         ///< Имя файла
-    FILE* file_ptr_ = nullptr;             ///< Указатель на файл
-    ElementBuffer<T> buffer_;              ///< Буфер для записи
-    uint64_t total_elements_written_ = 0;  ///< Количество записанных элементов
-    bool finalized_ = false;               ///< Флаг финализации потока
+    StorageId id_;                                        ///< Имя файла
+    FILE* file_ptr_ = nullptr;                            ///< Указатель на файл
+    ElementBuffer<T> buffer_;                             ///< Буфер для записи
+    uint64_t total_elements_written_ = 0;                 ///< Количество записанных элементов
+    bool finalized_ = false;                              ///< Флаг финализации потока
+    std::unique_ptr<Serializer<T>> serializer_member_{};  ///< Сериализатор для элементов
 
     /**
      * @brief Сбрасывает буфер в файл

@@ -74,7 +74,7 @@ inline const char* GetLevelPrefix(LogLevel level) {
  * @brief Удалить GCC суффикс " [with" из имени функции
  */
 inline void RemoveGccSuffix(std::string& func_str) {
-    const size_t gcc_suffix_pos = func_str.find(" [with");
+    const uint64_t gcc_suffix_pos = func_str.find(" [with");
     if (gcc_suffix_pos != std::string::npos) {
         func_str.erase(gcc_suffix_pos);
     }
@@ -84,9 +84,9 @@ inline void RemoveGccSuffix(std::string& func_str) {
  * @brief Удалить префикс до последнего пробела, если после него есть скобка
  */
 inline void RemovePrefixBeforeLastSpace(std::string& func_str) {
-    const size_t space_pos = func_str.find_last_of(' ');
+    const uint64_t space_pos = func_str.find_last_of(' ');
     if (space_pos != std::string::npos) {
-        const size_t paren_pos_check = func_str.find('(', space_pos);
+        const uint64_t paren_pos_check = func_str.find('(', space_pos);
         if (paren_pos_check != std::string::npos) {
             func_str = func_str.substr(space_pos + 1);
         }
@@ -97,7 +97,7 @@ inline void RemovePrefixBeforeLastSpace(std::string& func_str) {
  * @brief Удалить аргументы функции (всё после первой скобки)
  */
 inline void RemoveFunctionArgs(std::string& func_str) {
-    const size_t paren_pos = func_str.find('(');
+    const uint64_t paren_pos = func_str.find('(');
     if (paren_pos != std::string::npos) {
         func_str = func_str.substr(0, paren_pos);
     }
@@ -107,8 +107,8 @@ inline void RemoveFunctionArgs(std::string& func_str) {
  * @brief Удалить простые шаблонные параметры
  */
 inline void RemoveSimpleTemplateParams(std::string& func_str) {
-    const size_t template_pos = func_str.rfind('<');
-    const size_t scope_pos = func_str.rfind("::");
+    const uint64_t template_pos = func_str.rfind('<');
+    const uint64_t scope_pos = func_str.rfind("::");
 
     if (template_pos == std::string::npos) {
         return;
@@ -118,12 +118,12 @@ inline void RemoveSimpleTemplateParams(std::string& func_str) {
         return;
     }
 
-    const size_t closing_template_pos = func_str.rfind('>');
+    const uint64_t closing_template_pos = func_str.rfind('>');
     if (closing_template_pos == std::string::npos || closing_template_pos <= template_pos) {
         return;
     }
 
-    for (size_t i = template_pos + 1; i < closing_template_pos; ++i) {
+    for (uint64_t i = template_pos + 1; i < closing_template_pos; ++i) {
         if (func_str[i] == '<' || func_str[i] == '>') {
             return;
         }

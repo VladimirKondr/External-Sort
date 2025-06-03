@@ -49,7 +49,7 @@ class KWayMergeSorterMemoryTest : public ::testing::Test {
         return result;
     }
 
-    std::vector<int> GenerateRandomData(size_t size, int min_val = 0, int max_val = 1000) {
+    std::vector<int> GenerateRandomData(uint64_t size, int min_val = 0, int max_val = 1000) {
         std::vector<int> data;
         data.reserve(size);
 
@@ -57,7 +57,7 @@ class KWayMergeSorterMemoryTest : public ::testing::Test {
         std::mt19937 gen(rd());
         std::uniform_int_distribution<int> dis(min_val, max_val);
 
-        for (size_t i = 0; i < size; ++i) {
+        for (uint64_t i = 0; i < size; ++i) {
             data.push_back(dis(gen));
         }
         return data;
@@ -68,7 +68,7 @@ class KWayMergeSorterMemoryTest : public ::testing::Test {
             return true;
         }
 
-        for (size_t i = 1; i < data.size(); ++i) {
+        for (uint64_t i = 1; i < data.size(); ++i) {
             if (ascending && data[i] < data[i - 1]) {
                 return false;
             }
@@ -373,7 +373,7 @@ TEST_F(KWayMergeSorterMemoryTest, StressTestLargeData) {
     const std::string input_id = "stress_input";
     const std::string output_id = "stress_output";
 
-    const size_t data_size = 1000;
+    const uint64_t data_size = 1000;
     std::vector<int> test_data = GenerateRandomData(data_size, 0, 10'000);
     CreateTestData(input_id, test_data);
 
