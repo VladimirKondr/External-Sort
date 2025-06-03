@@ -1,8 +1,8 @@
-
 bazel-*
 !bazel-new_external_sort/external_sort_lib 
 .bazelrc
 bazel.build_settings.json
+MODULE.bazel.lock
 
 
 *.o
@@ -20,6 +20,7 @@ bazel.build_settings.json
 
 .clangd/
 .clangd
+.clangd-ignore
 .clang-tidy
 .clang-format
 clang-tidy
@@ -30,3 +31,4 @@ output.bin
 
 external_sort_merged.cpp
 merge_external_sort.py
+compile_commands.json
