@@ -1,0 +1,66 @@
+cc_library(
+    name = "element_buffer",
+    hdrs = ["include/element_buffer.hpp", "include/impl/element_buffer.tpp"],
+    srcs = [],
+    copts = ["-std=c++20"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "external_sort_lib",
+    hdrs = glob([
+        "include/**/*.hpp",
+        "include/impl/**/*.tpp"
+    ]),
+    srcs = glob(
+        ["src/**/*.cpp"],
+        exclude = ["src/demo.cpp", "src/main.cpp", "src/external_sort_task.cpp", "src/create_test_input.cpp", "src/create_sample_input.cpp"]
+    ),
+    deps = [":element_buffer"],
+    includes = ["include"],
+    copts = ["-std=c++20"],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "demo",
+    srcs = ["src/demo.cpp"],
+    deps = [":external_sort_lib"],
+    copts = ["-std=c++20"],
+)
+
+cc_binary(
+    name = "main_app",
+    srcs = ["src/main.cpp"],
+    deps = [":external_sort_lib"],
+    copts = ["-std=c++20"],
+)
+
+cc_binary(
+    name = "external_sort_task",
+    srcs = ["src/external_sort_task.cpp"],
+    deps = [":external_sort_lib"],
+    copts = ["-std=c++20"],
+)
+
+cc_binary(
+    name = "create_test_input",
+    srcs = ["src/create_test_input.cpp"],
+    copts = ["-std=c++20"],
+)
+
+cc_binary(
+    name = "create_random_test",
+    srcs = ["src/create_random_test.cpp"],
+    copts = ["-std=c++20"],
+)
+
+cc_test(
+    name = "all_tests",
+    srcs = glob(["tests/**/*.cpp"]),
+    deps = [
+        ":external_sort_lib",
+        "@googletest//:gtest_main",
+    ],
+    copts = ["-std=c++20"],
+)

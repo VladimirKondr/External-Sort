@@ -1,0 +1,164 @@
+/**
+ * @file debug_logger.hpp
+ * @brief Система цветного логирования для отладки
+ * @author External Sort Library
+ * @version 1.0
+ */
+
+#pragma once
+
+#include <iostream>
+#include <string>
+
+namespace external_sort::debug {
+
+/**
+ * @brief ANSI цветовые коды для терминала
+ */
+namespace colors {
+constexpr const char* RESET = "\033[0m";
+constexpr const char* GREEN = "\033[32m";
+constexpr const char* YELLOW = "\033[33m";
+constexpr const char* RED = "\033[31m";
+constexpr const char* BLUE = "\033[34m";
+constexpr const char* CYAN = "\033[36m";
+}  // namespace colors
+
+/**
+ * @brief Уровни логирования
+ */
+enum class LogLevel {
+    INFO,
+    SUCCESS,
+    WARNING,
+    ERROR,
+    DBG
+};
+
+/**
+ * @brief Получить цветовой код для уровня логирования
+ */
+inline const char* GetColorCode(LogLevel level) {
+    switch (level) {
+        case LogLevel::INFO:
+        case LogLevel::SUCCESS:
+            return colors::GREEN;
+        case LogLevel::WARNING:
+            return colors::YELLOW;
+        case LogLevel::ERROR:
+            return colors::RED;
+        case LogLevel::DBG:
+            return colors::CYAN;
+        default:
+            return colors::RESET;
+    }
+}
+
+/**
+ * @brief Получить префикс для уровня логирования
+ */
+inline const char* GetLevelPrefix(LogLevel level) {
+    switch (level) {
+        case LogLevel::INFO:
+            return "[INFO]";
+        case LogLevel::SUCCESS:
+            return "[SUCCESS]";
+        case LogLevel::WARNING:
+            return "[WARNING]";
+        case LogLevel::ERROR:
+            return "[ERROR]";
+        case LogLevel::DBG:
+            return "[DEBUG]";
+        default:
+            return "[LOG]";
+    }
+}
+
+/**
+ * @brief Извлечь имя функции без шаблонных параметров и аргументов
+ */
+inline std::string ExtractFunctionName(const char* func) {
+    std::string func_str(func);
+
+    size_t gcc_suffix_pos = func_str.find(" [with");
+    if (gcc_suffix_pos != std::string::npos) {
+        func_str.erase(gcc_suffix_pos);
+    }
+
+    size_t space_pos = func_str.find_last_of(' ');
+    if (space_pos != std::string::npos) {
+        size_t paren_pos_check = func_str.find('(', space_pos);
+        if (paren_pos_check != std::string::npos) {
+            func_str = func_str.substr(space_pos + 1);
+        }
+    }
+    
+    size_t paren_pos = func_str.find('(');
+    if (paren_pos != std::string::npos) {
+        func_str = func_str.substr(0, paren_pos);
+    }
+    
+    size_t template_pos = func_str.rfind('<');
+    size_t scope_pos = func_str.rfind("::");
+
+    if (template_pos != std::string::npos) {
+        if (scope_pos == std::string::npos || template_pos > scope_pos) {
+            size_t closing_template_pos = func_str.rfind('>');
+            if (closing_template_pos != std::string::npos && closing_template_pos > template_pos) {
+                 bool nested = false;
+                 for(size_t i = template_pos + 1; i < closing_template_pos; ++i) {
+                     if (func_str[i] == '<' || func_str[i] == '>') {
+                         nested = true;
+                         break;
+                     }
+                 }
+                 if (!nested) {
+                    func_str = func_str.substr(0, template_pos);
+                 }
+            }
+        }
+    }
+    
+    return func_str;
+}
+
+} // namespace external_sort::debug
+
+#ifdef DEBUG
+/**
+ * @brief Цветной макрос для логирования с указанием уровня и места вызова
+ * @param level Уровень логирования (LogLevel)
+ * @param x Выражение для вывода
+ */
+#define DEBUG_COUT_LEVEL(level, x)                                                         \
+    std::cout << external_sort::debug::GetColorCode(level)                                 \
+              << external_sort::debug::GetLevelPrefix(level) << " "                        \
+              << " in " << external_sort::debug::ExtractFunctionName(__PRETTY_FUNCTION__)  \
+              << "()] " << x << external_sort::debug::colors::RESET
+
+/**
+ * @brief Макросы для конкретных уровней логирования
+ */
+#define DEBUG_COUT_INFO(x) DEBUG_COUT_LEVEL(external_sort::debug::LogLevel::INFO, x)
+#define DEBUG_COUT_SUCCESS(x) DEBUG_COUT_LEVEL(external_sort::debug::LogLevel::SUCCESS, x)
+#define DEBUG_COUT_WARNING(x) DEBUG_COUT_LEVEL(external_sort::debug::LogLevel::WARNING, x)
+#define DEBUG_COUT_ERROR(x) DEBUG_COUT_LEVEL(external_sort::debug::LogLevel::ERROR, x)
+#define DEBUG_COUT_DEBUG(x) DEBUG_COUT_LEVEL(external_sort::debug::LogLevel::DBG, x)
+
+/**
+ * @brief Старый макрос DEBUG_COUT теперь соответствует INFO уровню
+ */
+#define DEBUG_COUT(x) DEBUG_COUT_INFO(x)
+
+#else
+/**
+ * @brief В release режиме все макросы неактивны
+ */
+#define DEBUG_COUT_LEVEL(level, x)
+#define DEBUG_COUT_INFO(x)
+#define DEBUG_COUT_SUCCESS(x)
+#define DEBUG_COUT_WARNING(x)
+#define DEBUG_COUT_ERROR(x)
+#define DEBUG_COUT_DEBUG(x)
+#define DEBUG_COUT(x)
+#endif

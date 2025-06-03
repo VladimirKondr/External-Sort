@@ -1,0 +1,8 @@
+module(
+    name = "new_external_sort",
+    version = "1.0",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "googletest", version = "1.17.0")
