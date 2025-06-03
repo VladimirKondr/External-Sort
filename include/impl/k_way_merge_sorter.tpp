@@ -9,6 +9,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <queue>
+#include <vector>
 
 template <typename T>
 std::vector<StorageId> KWayMergeSorter<T>::CreateInitialRuns() {

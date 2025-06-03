@@ -212,6 +212,53 @@ bazel test //:all_tests --test_filter="KWayMergeSorter*"
 -  KWayMergeSorter - основной алгоритм сортировки
 -  Граничные случаи и обработка ошибок
 
+##  Скрипты разработки
+
+Проект включает набор удобных скриптов для автоматизации задач разработки:
+
+### Форматирование кода (`scripts/format-code.sh`)
+
+```bash
+# Проверка форматирования всех файлов
+./scripts/format-code.sh
+
+# Автоматическое исправление форматирования
+./scripts/format-code.sh --fix
+
+# Работа с конкретным файлом
+./scripts/format-code.sh --file include/file_stream.hpp
+./scripts/format-code.sh --fix --file src/main.cpp
+
+# Подробный вывод
+./scripts/format-code.sh --verbose
+```
+
+### Статический анализ (`scripts/run-clang-tidy.sh`)
+
+```bash
+# Анализ кода (только ошибки в файлах проекта)
+./scripts/run-clang-tidy.sh
+
+# Безопасные автоматические исправления
+./scripts/run-clang-tidy.sh --auto-fix
+
+# Исправление всех найденных проблем
+./scripts/run-clang-tidy.sh --fix
+
+# Анализ конкретного файла
+./scripts/run-clang-tidy.sh --file src/utilities.cpp
+```
+
+**Различия между режимами исправления:**
+- `--auto-fix`: Исправляет только безопасные проблемы (nullptr, override, auto, range-for, etc.)
+- `--fix`: Пытается исправить все найденные проблемы (может требовать ручной проверки)
+
+**Преимущества скриптов:**
+- Фильтрация вывода: показывают только ошибки в файлах проекта
+- Цветной вывод для лучшей читаемости
+- Поддержка работы с отдельными файлами
+- Автоматическая генерация `compile_commands.json` при необходимости
+
 ##  Настройка и конфигурация
 
 ### Отладочный режим
@@ -226,18 +273,47 @@ bazel build //... --copt=-DDEBUG
 
 ```bash
 # Форматирование всех файлов
-bazel run //tools:format_all
+./scripts/format-code.sh --fix
 
-# Проверка форматирования
-bazel run //tools:check_format
+# Проверка форматирования (dry-run)
+./scripts/format-code.sh
+
+# Форматирование конкретного файла
+./scripts/format-code.sh --fix --file src/main.cpp
+
+# Через Bazel (использует ваши конфиги .clang-format)
+bazel run //:format_all
+bazel run //:check_format
 ```
 
 ### Статический анализ
 
 ```bash
-# Запуск clang-tidy
-bazel run //tools:clang_tidy
+# Анализ кода (показывает только ошибки в файлах проекта)
+./scripts/run-clang-tidy.sh
+
+# Автоматическое исправление безопасных проблем
+./scripts/run-clang-tidy.sh --auto-fix
+
+# Исправление всех проблем (требует внимания!)
+./scripts/run-clang-tidy.sh --fix
+
+# Анализ конкретного файла
+./scripts/run-clang-tidy.sh --file src/main.cpp
+
+# Через Bazel (использует ваши конфиги .clang-tidy)
+bazel run //:clang_tidy         # Только анализ
+bazel run //:clang_tidy_auto_fix # Безопасные исправления
+bazel run //:clang_tidy_fix      # Все исправления
 ```
+
+**Типы проблем, исправляемых автоматически (`--auto-fix`):**
+- `modernize-use-nullptr` - замена NULL на nullptr
+- `modernize-use-override` - добавление override
+- `modernize-use-auto` - использование auto где возможно
+- `modernize-loop-convert` - замена на range-based for
+- `performance-*` - оптимизации производительности
+- `readability-*` - улучшения читаемости кода
 
 ##  Производительность
 

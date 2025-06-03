@@ -7,12 +7,16 @@
 
 #pragma once
 
-#include "debug_logger.hpp"
 #include "element_buffer.hpp"
 #include "interfaces.hpp"
 #include "temp_file_manager.hpp"
 
+#include <cstdint>
 #include <cstdio>
+#include <filesystem>
+#include <memory>
+#include <stdexcept>
+#include <string>
 
 namespace external_sort {
 

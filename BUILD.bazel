@@ -64,3 +64,70 @@ cc_test(
     ],
     copts = ["-std=c++20"],
 )
+
+sh_binary(
+    name = "format_all",
+    srcs = ["scripts/format-code.sh"],
+    args = ["--fix"],
+    data = [".clang-format"] + glob([
+        "src/**/*.cpp",
+        "include/**/*.hpp", 
+        "include/**/*.tpp",
+        "tests/**/*.cpp"
+    ]),
+)
+
+sh_binary(
+    name = "check_format",
+    srcs = ["scripts/format-code.sh"],
+    data = [".clang-format"] + glob([
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "include/**/*.tpp", 
+        "tests/**/*.cpp"
+    ]),
+)
+
+sh_binary(
+    name = "clang_tidy",
+    srcs = ["scripts/run-clang-tidy.sh"],
+    data = [
+        ".clang-tidy",
+        "compile_commands.json",
+    ] + glob([
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "include/**/*.tpp",
+        "tests/**/*.cpp"
+    ]),
+)
+
+sh_binary(
+    name = "clang_tidy_fix",
+    srcs = ["scripts/run-clang-tidy.sh"],
+    args = ["--fix"],
+    data = [
+        ".clang-tidy", 
+        "compile_commands.json",
+    ] + glob([
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "include/**/*.tpp",
+        "tests/**/*.cpp"
+    ]),
+)
+
+sh_binary(
+    name = "clang_tidy_auto_fix",
+    srcs = ["scripts/run-clang-tidy.sh"],
+    args = ["--auto-fix"],
+    data = [
+        ".clang-tidy",
+        "compile_commands.json", 
+    ] + glob([
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "include/**/*.tpp",
+        "tests/**/*.cpp"
+    ]),
+)

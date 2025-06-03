@@ -7,9 +7,11 @@
 
 #pragma once
 
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include <utility>
 
 template <typename T>
 void FileInputStream<T>::FillBufferInternal() {

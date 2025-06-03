@@ -8,6 +8,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <iostream>
 #include <string>
 
 namespace external_sort::debug {
@@ -27,7 +29,7 @@ constexpr const char* kCyan = "\033[36m";
 /**
  * @brief Уровни логирования
  */
-enum class LogLevel { INFO, SUCCESS, WARNING, ERROR, DBG };
+enum class LogLevel : std::uint8_t { INFO, SUCCESS, WARNING, ERROR, DBG };
 
 /**
  * @brief Получить цветовой код для уровня логирования
@@ -69,16 +71,19 @@ inline const char* GetLevelPrefix(LogLevel level) {
 }
 
 /**
- * @brief Извлечь имя функции без шаблонных параметров и аргументов
+ * @brief Удалить GCC суффикс " [with" из имени функции
  */
-inline std::string ExtractFunctionName(const char* func) {
-    std::string func_str(func);
-
+inline void RemoveGccSuffix(std::string& func_str) {
     const size_t gcc_suffix_pos = func_str.find(" [with");
     if (gcc_suffix_pos != std::string::npos) {
         func_str.erase(gcc_suffix_pos);
     }
+}
 
+/**
+ * @brief Удалить префикс до последнего пробела, если после него есть скобка
+ */
+inline void RemovePrefixBeforeLastSpace(std::string& func_str) {
     const size_t space_pos = func_str.find_last_of(' ');
     if (space_pos != std::string::npos) {
         const size_t paren_pos_check = func_str.find('(', space_pos);
@@ -86,32 +91,57 @@ inline std::string ExtractFunctionName(const char* func) {
             func_str = func_str.substr(space_pos + 1);
         }
     }
+}
 
+/**
+ * @brief Удалить аргументы функции (всё после первой скобки)
+ */
+inline void RemoveFunctionArgs(std::string& func_str) {
     const size_t paren_pos = func_str.find('(');
     if (paren_pos != std::string::npos) {
         func_str = func_str.substr(0, paren_pos);
     }
+}
 
+/**
+ * @brief Удалить простые шаблонные параметры
+ */
+inline void RemoveSimpleTemplateParams(std::string& func_str) {
     const size_t template_pos = func_str.rfind('<');
     const size_t scope_pos = func_str.rfind("::");
 
-    if (template_pos != std::string::npos) {
-        if (scope_pos == std::string::npos || template_pos > scope_pos) {
-            const size_t closing_template_pos = func_str.rfind('>');
-            if (closing_template_pos != std::string::npos && closing_template_pos > template_pos) {
-                bool nested = false;
-                for (size_t i = template_pos + 1; i < closing_template_pos; ++i) {
-                    if (func_str[i] == '<' || func_str[i] == '>') {
-                        nested = true;
-                        break;
-                    }
-                }
-                if (!nested) {
-                    func_str = func_str.substr(0, template_pos);
-                }
-            }
+    if (template_pos == std::string::npos) {
+        return;
+    }
+
+    if (scope_pos != std::string::npos && template_pos <= scope_pos) {
+        return;
+    }
+
+    const size_t closing_template_pos = func_str.rfind('>');
+    if (closing_template_pos == std::string::npos || closing_template_pos <= template_pos) {
+        return;
+    }
+
+    for (size_t i = template_pos + 1; i < closing_template_pos; ++i) {
+        if (func_str[i] == '<' || func_str[i] == '>') {
+            return;
         }
     }
+
+    func_str = func_str.substr(0, template_pos);
+}
+
+/**
+ * @brief Извлечь имя функции без шаблонных параметров и аргументов
+ */
+inline std::string ExtractFunctionName(const char* func) {
+    std::string func_str(func);
+
+    RemoveGccSuffix(func_str);
+    RemovePrefixBeforeLastSpace(func_str);
+    RemoveFunctionArgs(func_str);
+    RemoveSimpleTemplateParams(func_str);
 
     return func_str;
 }

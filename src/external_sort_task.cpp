@@ -70,35 +70,16 @@ int main() {
         }
         sorter_io_buffer_bytes = sorter_io_elements_per_buffer * sizeof_element;
 
-        uint64_t temp_b_run_estimate = sizeof_element;
         if (sorter_internal_budget > 2 * sorter_io_buffer_bytes) {
-            temp_b_run_estimate = sorter_internal_budget - 2 * sorter_io_buffer_bytes;
-        }
-        uint64_t elements_per_run_est =
-            std::max(static_cast<uint64_t>(1), temp_b_run_estimate / sizeof_element);
-        uint64_t max_runs_est = (num_elements + elements_per_run_est - 1) / elements_per_run_est;
-
-        const uint64_t COST_PER_FILENAME_ID_APPROX = 32;
-        uint64_t estimated_m_ids_cost = max_runs_est * COST_PER_FILENAME_ID_APPROX;
-
-        estimated_m_ids_cost = std::min(estimated_m_ids_cost, sorter_internal_budget / 3);
-
-        uint64_t operational_budget_after_ids =
-            sorter_internal_budget > estimated_m_ids_cost
-                ? sorter_internal_budget - estimated_m_ids_cost
-                : sizeof_element;
-
-        if (operational_budget_after_ids > 2 * sorter_io_buffer_bytes) {
-            memory_for_sorter_runs_bytes =
-                operational_budget_after_ids - 2 * sorter_io_buffer_bytes;
+            memory_for_sorter_runs_bytes = sorter_internal_budget - 2 * sorter_io_buffer_bytes;
         } else {
             memory_for_sorter_runs_bytes = sizeof_element;
         }
         memory_for_sorter_runs_bytes = std::max(memory_for_sorter_runs_bytes, sizeof_element);
 
         uint64_t num_concurrent_streams = 0;
-        if (sorter_io_buffer_bytes > 0 && operational_budget_after_ids > sorter_io_buffer_bytes) {
-            num_concurrent_streams = operational_budget_after_ids / sorter_io_buffer_bytes;
+        if (sorter_io_buffer_bytes > 0 && sorter_internal_budget > sorter_io_buffer_bytes) {
+            num_concurrent_streams = sorter_internal_budget / sorter_io_buffer_bytes;
         }
         k_val = num_concurrent_streams > 2 ? num_concurrent_streams - 1 : 2;
     }
