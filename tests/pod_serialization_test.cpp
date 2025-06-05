@@ -44,13 +44,13 @@ class PodSerializationTest : public ::testing::Test {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file));
+        EXPECT_TRUE(serializer->Serialize(original, file));
         fclose(file);
 
         T restored{};
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored, file));
+        EXPECT_TRUE(serializer->Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -198,7 +198,7 @@ TEST_F(PodSerializationTest, BulkSerialization) {
     ASSERT_NE(file, nullptr);
 
     for (const auto& value : test_data) {
-        EXPECT_TRUE(serializer->serialize(value, file));
+        EXPECT_TRUE(serializer->Serialize(value, file));
     }
     fclose(file);
 
@@ -210,7 +210,7 @@ TEST_F(PodSerializationTest, BulkSerialization) {
 
     for (uint64_t i = 0; i < test_data.size(); ++i) {
         uint64_t value;
-        EXPECT_TRUE(serializer->deserialize(value, file));
+        EXPECT_TRUE(serializer->Deserialize(value, file));
         restored_data.push_back(value);
     }
     fclose(file);
@@ -230,9 +230,9 @@ TEST_F(PodSerializationTest, SerializationErrors) {
     ASSERT_NE(file, nullptr);
     fclose(file);
 
-    EXPECT_FALSE(serializer->serialize(test_value, file));
+    EXPECT_FALSE(serializer->Serialize(test_value, file));
 
-    EXPECT_FALSE(serializer->deserialize(restored_value, file));
+    EXPECT_FALSE(serializer->Deserialize(restored_value, file));
 
     file = fopen(test_file.c_str(), "wb");
     ASSERT_NE(file, nullptr);
@@ -240,6 +240,6 @@ TEST_F(PodSerializationTest, SerializationErrors) {
 
     file = fopen(test_file.c_str(), "rb");
     ASSERT_NE(file, nullptr);
-    EXPECT_FALSE(serializer->deserialize(restored_value, file));
+    EXPECT_FALSE(serializer->Deserialize(restored_value, file));
     fclose(file);
 }

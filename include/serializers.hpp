@@ -35,7 +35,7 @@ class Serializer {
      * @param file Указатель на файл для записи
      * @return true, если сериализация прошла успешно
      */
-    virtual bool serialize(const T& obj, FILE* file) = 0;
+    virtual bool Serialize(const T& obj, FILE* file) = 0;
 
     /**
      * @brief Десериализовать объект из файла
@@ -44,7 +44,7 @@ class Serializer {
      * @param file Указатель на файл для чтения
      * @return true, если десериализация прошла успешно
      */
-    virtual bool deserialize(T& obj, FILE* file) = 0;
+    virtual bool Deserialize(T& obj, FILE* file) = 0;
 };
 
 /**
@@ -55,48 +55,48 @@ class Serializer {
 template <PodSerializable T>
 class PodSerializer : public Serializer<T> {
    public:
-    bool serialize(const T& obj, FILE* file) override {
+    bool Serialize(const T& obj, FILE* file) override {
         return fwrite(&obj, sizeof(T), 1, file) == 1;
     }
 
-    bool deserialize(T& obj, FILE* file) override {
+    bool Deserialize(T& obj, FILE* file) override {
         return fread(&obj, sizeof(T), 1, file) == 1;
     }
 };
 
 namespace detail {
 template <typename T>
-bool adl_serialize(const T& obj, FILE* file) {
-    return serialize(obj, file);
+bool AdlSerialize(const T& obj, FILE* file) {
+    return Serialize(obj, file);
 }
 
 template <typename T>
-bool adl_deserialize(T& obj, FILE* file) {
-    return deserialize(obj, file);
+bool AdlDeserialize(T& obj, FILE* file) {
+    return Deserialize(obj, file);
 }
 }  // namespace detail
 
 /**
  * @brief Сериализатор для типов с пользовательской сериализацией
  *
- * Использует предоставленные пользовательские функции serialize и deserialize.
+ * Использует предоставленные пользовательские функции Serialize и Deserialize.
  * Эти функции должны быть доступны через ADL (аргументно-зависимый поиск) и
  * обычно объявляются в том же пространстве имен, что и тип данных.
  *
  * Функции должны иметь сигнатуры:
- * - bool serialize(const T& obj, FILE* file);
- * - bool deserialize(T& obj, FILE* file);
+ * - bool Serialize(const T& obj, FILE* file);
+ * - bool Deserialize(T& obj, FILE* file);
  */
 template <CustomSerializable T>
 class CustomFunctionSerializer : public Serializer<T> {
    public:
-    bool serialize(const T& obj, FILE* file) override {
-        bool result = detail::adl_serialize(obj, file);
+    bool Serialize(const T& obj, FILE* file) override {
+        bool result = detail::AdlSerialize(obj, file);
         return result && !ferror(file);
     }
 
-    bool deserialize(T& obj, FILE* file) override {
-        bool result = detail::adl_deserialize(obj, file);
+    bool Deserialize(T& obj, FILE* file) override {
+        bool result = detail::AdlDeserialize(obj, file);
         return result && !ferror(file) && !feof(file);
     }
 };
@@ -104,17 +104,17 @@ class CustomFunctionSerializer : public Serializer<T> {
 /**
  * @brief Сериализатор для типов с методами сериализации
  *
- * Использует методы serialize и deserialize класса
+ * Использует методы Serialize и Deserialize класса
  */
 template <MethodSerializable T>
 class MethodSerializer : public Serializer<T> {
    public:
-    bool serialize(const T& obj, FILE* file) override {
-        return obj.serialize(file);
+    bool Serialize(const T& obj, FILE* file) override {
+        return obj.Serialize(file);
     }
 
-    bool deserialize(T& obj, FILE* file) override {
-        return obj.deserialize(file);
+    bool Deserialize(T& obj, FILE* file) override {
+        return obj.Deserialize(file);
     }
 };
 
@@ -141,7 +141,7 @@ std::unique_ptr<Serializer<T>> create_serializer() {
 template <>
 class Serializer<std::string> {
    public:
-    bool serialize(const std::string& obj, FILE* file) {
+    bool Serialize(const std::string& obj, FILE* file) {
         uint64_t length = obj.length();
         if (fwrite(&length, sizeof(uint64_t), 1, file) != 1) {
             return false;
@@ -149,7 +149,7 @@ class Serializer<std::string> {
         return fwrite(obj.data(), sizeof(char), length, file) == length;
     }
 
-    bool deserialize(std::string& obj, FILE* file) {
+    bool Deserialize(std::string& obj, FILE* file) {
         uint64_t length;
         if (fread(&length, sizeof(uint64_t), 1, file) != 1) {
             return false;
@@ -162,7 +162,7 @@ class Serializer<std::string> {
 template <typename T>
 class Serializer<std::vector<T>> {
    public:
-    bool serialize(const std::vector<T>& obj, FILE* file) {
+    bool Serialize(const std::vector<T>& obj, FILE* file) {
         uint64_t size = obj.size();
         if (fwrite(&size, sizeof(uint64_t), 1, file) != 1) {
             return false;
@@ -170,14 +170,14 @@ class Serializer<std::vector<T>> {
 
         auto item_serializer = create_serializer<T>();
         for (const auto& item : obj) {
-            if (!item_serializer->serialize(item, file)) {
+            if (!item_serializer->Serialize(item, file)) {
                 return false;
             }
         }
         return true;
     }
 
-    bool deserialize(std::vector<T>& obj, FILE* file) {
+    bool Deserialize(std::vector<T>& obj, FILE* file) {
         uint64_t size;
         if (fread(&size, sizeof(uint64_t), 1, file) != 1) {
             return false;
@@ -186,7 +186,7 @@ class Serializer<std::vector<T>> {
         obj.resize(size);
         auto item_serializer = create_serializer<T>();
         for (auto& item : obj) {
-            if (!item_serializer->deserialize(item, file)) {
+            if (!item_serializer->Deserialize(item, file)) {
                 return false;
             }
         }

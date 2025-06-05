@@ -1,6 +1,6 @@
 /**
  * @file external_adl_serialization_test.cpp
- * @brief Тесты для external/ADL сериализации (функции serialize/deserialize вне класса)
+ * @brief Тесты для external/ADL сериализации (функции Serialize/Deserialize вне класса)
  * @author External Sort Library
  * @version 1.0
  */
@@ -40,7 +40,7 @@ struct Person {
  * @brief Функции ADL сериализации для Person
  * Должны быть в том же пространстве имен для работы ADL
  */
-bool serialize(const Person& person, FILE* file) {
+bool Serialize(const Person& person, FILE* file) {
     uint64_t name_size = person.name.size();
     if (fwrite(&name_size, sizeof(uint64_t), 1, file) != 1) {
         return false;
@@ -62,7 +62,7 @@ bool serialize(const Person& person, FILE* file) {
     return true;
 }
 
-bool deserialize(Person& person, FILE* file) {
+bool Deserialize(Person& person, FILE* file) {
     uint64_t name_size;
     if (fread(&name_size, sizeof(uint64_t), 1, file) != 1) {
         return false;
@@ -98,7 +98,7 @@ struct Company {
     }
 };
 
-bool serialize(const Company& company, FILE* file) {
+bool Serialize(const Company& company, FILE* file) {
     uint64_t name_size = company.name.size();
     if (fwrite(&name_size, sizeof(uint64_t), 1, file) != 1) {
         return false;
@@ -114,7 +114,7 @@ bool serialize(const Company& company, FILE* file) {
         return false;
     }
     for (const auto& employee : company.employees) {
-        if (!serialize(employee, file)) {
+        if (!Serialize(employee, file)) {
             return false;
         }
     }
@@ -126,7 +126,7 @@ bool serialize(const Company& company, FILE* file) {
     return true;
 }
 
-bool deserialize(Company& company, FILE* file) {
+bool Deserialize(Company& company, FILE* file) {
     uint64_t name_size;
     if (fread(&name_size, sizeof(uint64_t), 1, file) != 1) {
         return false;
@@ -144,7 +144,7 @@ bool deserialize(Company& company, FILE* file) {
     }
     company.employees.resize(employees_count);
     for (auto& employee : company.employees) {
-        if (!deserialize(employee, file)) {
+        if (!Deserialize(employee, file)) {
             return false;
         }
     }
@@ -174,7 +174,7 @@ struct Point3D {
     }
 };
 
-bool serialize(const Point3D& point, FILE* file) {
+bool Serialize(const Point3D& point, FILE* file) {
     if (fwrite(&point.x, sizeof(float), 1, file) != 1) {
         return false;
     }
@@ -184,7 +184,7 @@ bool serialize(const Point3D& point, FILE* file) {
     return fwrite(&point.z, sizeof(float), 1, file) == 1;
 }
 
-bool deserialize(Point3D& point, FILE* file) {
+bool Deserialize(Point3D& point, FILE* file) {
     if (fread(&point.x, sizeof(float), 1, file) != 1) {
         return false;
     }
@@ -223,11 +223,11 @@ struct Matrix2x2 {
     }
 };
 
-bool serialize(const Matrix2x2& matrix, FILE* file) {
+bool Serialize(const Matrix2x2& matrix, FILE* file) {
     return fwrite(matrix.data, sizeof(float), 4, file) == 4;
 }
 
-bool deserialize(Matrix2x2& matrix, FILE* file) {
+bool Deserialize(Matrix2x2& matrix, FILE* file) {
     return fread(matrix.data, sizeof(float), 4, file) == 4;
 }
 
@@ -259,13 +259,13 @@ class ExternalAdlSerializationTest : public ::testing::Test {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file));
+        EXPECT_TRUE(serializer->Serialize(original, file));
         fclose(file);
 
         T restored{};
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored, file));
+        EXPECT_TRUE(serializer->Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -357,10 +357,10 @@ TEST_F(ExternalAdlSerializationTest, SerializationErrors) {
     ASSERT_NE(file, nullptr);
     fclose(file);
 
-    EXPECT_FALSE(serializer->serialize(person, file));
+    EXPECT_FALSE(serializer->Serialize(person, file));
 
     Person restored_person;
-    EXPECT_FALSE(serializer->deserialize(restored_person, file));
+    EXPECT_FALSE(serializer->Deserialize(restored_person, file));
 
     file = fopen(test_file.c_str(), "wb");
     ASSERT_NE(file, nullptr);
@@ -368,7 +368,7 @@ TEST_F(ExternalAdlSerializationTest, SerializationErrors) {
 
     file = fopen(test_file.c_str(), "rb");
     ASSERT_NE(file, nullptr);
-    EXPECT_FALSE(serializer->deserialize(restored_person, file));
+    EXPECT_FALSE(serializer->Deserialize(restored_person, file));
     fclose(file);
 }
 
@@ -393,7 +393,7 @@ TEST_F(ExternalAdlSerializationTest, BulkSerialization) {
     ASSERT_NE(file, nullptr);
 
     for (const auto& point : test_data) {
-        EXPECT_TRUE(serializer->serialize(point, file));
+        EXPECT_TRUE(serializer->Serialize(point, file));
     }
     fclose(file);
 
@@ -405,7 +405,7 @@ TEST_F(ExternalAdlSerializationTest, BulkSerialization) {
 
     for (uint64_t i = 0; i < test_size; ++i) {
         Point3D point;
-        EXPECT_TRUE(serializer->deserialize(point, file));
+        EXPECT_TRUE(serializer->Deserialize(point, file));
         restored_data.push_back(point);
     }
     fclose(file);

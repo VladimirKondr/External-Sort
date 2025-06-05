@@ -51,11 +51,11 @@ class WithMethods {
 
     virtual ~WithMethods() = default;
 
-    bool serialize(FILE* file) const {
+    bool Serialize(FILE* file) const {
         return fwrite(&value, sizeof(int), 1, file) == 1;
     }
 
-    bool deserialize(FILE* file) {
+    bool Deserialize(FILE* file) {
         return fread(&value, sizeof(int), 1, file) == 1;
     }
 
@@ -72,11 +72,11 @@ struct OnlyAdlFunctions {
     }
 };
 
-bool serialize(const OnlyAdlFunctions& obj, FILE* file) {
+bool Serialize(const OnlyAdlFunctions& obj, FILE* file) {
     return fwrite(&obj.data, sizeof(double), 1, file) == 1;
 }
 
-bool deserialize(OnlyAdlFunctions& obj, FILE* file) {
+bool Deserialize(OnlyAdlFunctions& obj, FILE* file) {
     return fread(&obj.data, sizeof(double), 1, file) == 1;
 }
 
@@ -88,11 +88,11 @@ struct WithAdlFunctions {
     }
 };
 
-bool serialize(const WithAdlFunctions& obj, FILE* file) {
+bool Serialize(const WithAdlFunctions& obj, FILE* file) {
     return fwrite(&obj.data, sizeof(double), 1, file) == 1;
 }
 
-bool deserialize(WithAdlFunctions& obj, FILE* file) {
+bool Deserialize(WithAdlFunctions& obj, FILE* file) {
     return fread(&obj.data, sizeof(double), 1, file) == 1;
 }
 
@@ -100,11 +100,11 @@ class WithWrongMethods {
    public:
     int value;
 
-    void serialize(FILE* file) const {
+    void Serialize(FILE* file) const {
         fwrite(&value, sizeof(int), 1, file);
     }
 
-    void deserialize(FILE* file) {
+    void Deserialize(FILE* file) {
         fread(&value, sizeof(int), 1, file);
     }
 };
@@ -113,11 +113,11 @@ class WithWrongParameters {
    public:
     int value;
 
-    bool serialize(int file) const {
+    bool Serialize(int file) const {
         return true;
     }
 
-    bool deserialize(int file) {
+    bool Deserialize(int file) {
         return true;
     }
 };
@@ -241,12 +241,12 @@ TEST_F(ConceptValidationTest, SerializerPriority) {
         ASSERT_NE(serializer, nullptr);
         FILE* file1 = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file1, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file1));
+        EXPECT_TRUE(serializer->Serialize(original, file1));
         fclose(file1);
         concept_test_types::OnlyAdlFunctions restored1{};
         FILE* file2 = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file2, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored1, file2));
+        EXPECT_TRUE(serializer->Deserialize(restored1, file2));
         fclose(file2);
         EXPECT_EQ(original, restored1);
     }
@@ -256,12 +256,12 @@ TEST_F(ConceptValidationTest, SerializerPriority) {
         ASSERT_NE(serializer, nullptr);
         FILE* file3 = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file3, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file3));
+        EXPECT_TRUE(serializer->Serialize(original, file3));
         fclose(file3);
         concept_test_types::WithAdlFunctions restored2{};
         FILE* file4 = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file4, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored2, file4));
+        EXPECT_TRUE(serializer->Deserialize(restored2, file4));
         fclose(file4);
         EXPECT_EQ(original, restored2);
     }
@@ -277,13 +277,13 @@ TEST_F(ConceptValidationTest, SerializerFunctionality) {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file));
+        EXPECT_TRUE(serializer->Serialize(original, file));
         fclose(file);
 
         concept_test_types::SimplePod restored{};
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored, file));
+        EXPECT_TRUE(serializer->Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -295,13 +295,13 @@ TEST_F(ConceptValidationTest, SerializerFunctionality) {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file));
+        EXPECT_TRUE(serializer->Serialize(original, file));
         fclose(file);
 
         concept_test_types::WithMethods restored{};
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored, file));
+        EXPECT_TRUE(serializer->Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -313,13 +313,13 @@ TEST_F(ConceptValidationTest, SerializerFunctionality) {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file));
+        EXPECT_TRUE(serializer->Serialize(original, file));
         fclose(file);
 
         concept_test_types::OnlyAdlFunctions restored{};
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored, file));
+        EXPECT_TRUE(serializer->Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -337,13 +337,13 @@ TEST_F(ConceptValidationTest, SpecializedSerializers) {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer.serialize(original, file));
+        EXPECT_TRUE(serializer.Serialize(original, file));
         fclose(file);
 
         std::string restored;
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer.deserialize(restored, file));
+        EXPECT_TRUE(serializer.Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -356,13 +356,13 @@ TEST_F(ConceptValidationTest, SpecializedSerializers) {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer.serialize(original, file));
+        EXPECT_TRUE(serializer.Serialize(original, file));
         fclose(file);
 
         std::vector<int> restored;
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer.deserialize(restored, file));
+        EXPECT_TRUE(serializer.Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -375,13 +375,13 @@ TEST_F(ConceptValidationTest, SpecializedSerializers) {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer.serialize(original, file));
+        EXPECT_TRUE(serializer.Serialize(original, file));
         fclose(file);
 
         std::vector<std::vector<double>> restored;
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer.deserialize(restored, file));
+        EXPECT_TRUE(serializer.Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);

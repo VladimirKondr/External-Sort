@@ -44,7 +44,7 @@ void FileInputStream<T>::FillBufferInternal() {
     } else {
         for (uint64_t i = 0; i < elements_to_read_this_pass; ++i) {
             T element;
-            if (!serializer_member_->deserialize(element, file_ptr_)) {
+            if (!serializer_member_->Deserialize(element, file_ptr_)) {
                 break;
             }
             buffer_.PushBack(element);
@@ -198,9 +198,9 @@ void FileOutputStream<T>::FlushBufferInternal() {
     } else {
         const T* data = buffer_.Data();
         for (uint64_t i = 0; i < buffer_.Size(); ++i) {
-            if (!serializer_member_->serialize(data[i], file_ptr_)) {
+            if (!serializer_member_->Serialize(data[i], file_ptr_)) {
                 throw std::runtime_error(
-                    "FileOutputStream: Failed to serialize element to file: " + id_);
+                    "FileOutputStream: Failed to Serialize element to file: " + id_);
             }
             successful_writes++;
         }

@@ -41,15 +41,15 @@ concept PodSerializable = std::is_trivially_copyable_v<T> && std::is_standard_la
 // Концепт для типов с методами сериализации
 template<typename T>
 concept MethodSerializable = requires(T obj, const T const_obj, FILE* file) {
-    { const_obj.serialize(file) } -> std::convertible_to<bool>;
-    { obj.deserialize(file) } -> std::convertible_to<bool>;
+    { const_obj.Serialize(file) } -> std::convertible_to<bool>;
+    { obj.Deserialize(file) } -> std::convertible_to<bool>;
 };
 
 // Концепт для типов с внешними функциями (ADL)
 template<typename T>
 concept CustomSerializable = requires(T obj, const T const_obj, FILE* file) {
-    { serialize(const_obj, file) } -> std::convertible_to<bool>;
-    { deserialize(obj, file) } -> std::convertible_to<bool>;
+    { Serialize(const_obj, file) } -> std::convertible_to<bool>;
+    { Deserialize(obj, file) } -> std::convertible_to<bool>;
 };
 ```
 
@@ -100,7 +100,7 @@ auto serializer = create_serializer<Vector3D>();
 Vector3D point{1.0f, 2.0f, 3.0f};
 
 FILE* file = fopen("data.bin", "wb");
-serializer->serialize(point, file);  // Быстрая POD-сериализация
+serializer->Serialize(point, file);  // Быстрая POD-сериализация
 fclose(file);
 ```
 
@@ -121,7 +121,7 @@ public:
         : name(n), values(v), coefficient(c) {}
     
     // Методы сериализации должны иметь следующие сигнатуры:
-    bool serialize(FILE* file) const {
+    bool Serialize(FILE* file) const {
         // Сериализация строки
         uint64_t name_size = name.size();
         if (fwrite(&name_size, sizeof(uint64_t), 1, file) != 1) return false;
@@ -138,7 +138,7 @@ public:
         return fwrite(&coefficient, sizeof(double), 1, file) == 1;
     }
     
-    bool deserialize(FILE* file) {
+    bool Deserialize(FILE* file) {
         // Десериализация строки
         uint64_t name_size;
         if (fread(&name_size, sizeof(uint64_t), 1, file) != 1) return false;
@@ -198,7 +198,7 @@ public:
 
 // Функции должны быть определены в том же пространстве имен, 
 // что и класс, для работы ADL
-bool serialize(const Person& person, FILE* file) {
+bool Serialize(const Person& person, FILE* file) {
     // Сериализация имени
     uint64_t name_size = person.name.size();
     if (fwrite(&name_size, sizeof(uint64_t), 1, file) != 1) return false;
@@ -211,7 +211,7 @@ bool serialize(const Person& person, FILE* file) {
     return fwrite(&person.height, sizeof(double), 1, file) == 1;
 }
 
-bool deserialize(Person& person, FILE* file) {
+bool Deserialize(Person& person, FILE* file) {
     // Десериализация имени
     uint64_t name_size;
     if (fread(&name_size, sizeof(uint64_t), 1, file) != 1) return false;
@@ -236,7 +236,7 @@ struct Company {
     }
 };
 
-bool serialize(const Company& company, FILE* file) {
+bool Serialize(const Company& company, FILE* file) {
     // Сериализация названия
     uint64_t name_size = company.name.size();
     if (fwrite(&name_size, sizeof(uint64_t), 1, file) != 1) return false;
@@ -248,13 +248,13 @@ bool serialize(const Company& company, FILE* file) {
     uint64_t employees_count = company.employees.size();
     if (fwrite(&employees_count, sizeof(uint64_t), 1, file) != 1) return false;
     for (const auto& employee : company.employees) {
-        if (!serialize(employee, file)) return false;  // ADL вызов
+        if (!Serialize(employee, file)) return false;  // ADL вызов
     }
     
     return fwrite(&company.revenue, sizeof(double), 1, file) == 1;
 }
 
-bool deserialize(Company& company, FILE* file) {
+bool Deserialize(Company& company, FILE* file) {
     // Десериализация названия
     uint64_t name_size;
     if (fread(&name_size, sizeof(uint64_t), 1, file) != 1) return false;
@@ -268,7 +268,7 @@ bool deserialize(Company& company, FILE* file) {
     if (fread(&employees_count, sizeof(uint64_t), 1, file) != 1) return false;
     company.employees.resize(employees_count);
     for (auto& employee : company.employees) {
-        if (!deserialize(employee, file)) return false;  // ADL вызов
+        if (!Deserialize(employee, file)) return false;  // ADL вызов
     }
     
     return fread(&company.revenue, sizeof(double), 1, file) == 1;
@@ -290,7 +290,7 @@ static_assert(CustomSerializable<my_types::Company>);
 template<>
 class Serializer<std::string> {
 public:
-    bool serialize(const std::string& str, FILE* file) const {
+    bool Serialize(const std::string& str, FILE* file) const {
         uint64_t size = str.size();
         if (fwrite(&size, sizeof(uint64_t), 1, file) != 1) return false;
         if (size > 0) {
@@ -299,7 +299,7 @@ public:
         return true;
     }
     
-    bool deserialize(std::string& str, FILE* file) {
+    bool Deserialize(std::string& str, FILE* file) {
         uint64_t size;
         if (fread(&size, sizeof(uint64_t), 1, file) != 1) return false;
         str.resize(size);
@@ -317,23 +317,23 @@ private:
     Serializer<T> element_serializer;
 
 public:
-    bool serialize(const std::vector<T>& vec, FILE* file) const {
+    bool Serialize(const std::vector<T>& vec, FILE* file) const {
         uint64_t size = vec.size();
         if (fwrite(&size, sizeof(uint64_t), 1, file) != 1) return false;
         
         for (const auto& element : vec) {
-            if (!element_serializer.serialize(element, file)) return false;
+            if (!element_serializer.Serialize(element, file)) return false;
         }
         return true;
     }
     
-    bool deserialize(std::vector<T>& vec, FILE* file) {
+    bool Deserialize(std::vector<T>& vec, FILE* file) {
         uint64_t size;
         if (fread(&size, sizeof(uint64_t), 1, file) != 1) return false;
         
         vec.resize(size);
         for (auto& element : vec) {
-            if (!element_serializer.deserialize(element, file)) return false;
+            if (!element_serializer.Deserialize(element, file)) return false;
         }
         return true;
     }
@@ -345,8 +345,8 @@ public:
 При наличии нескольких механизмов сериализации для одного типа, выбор происходит в следующем порядке:
 
 1. **POD-сериализация** (для POD-типов) - самая быстрая
-2. **Внешние функции** (для типов с функциями `serialize`/`deserialize`)
-3. **Методы класса** (для типов с методами `serialize`/`deserialize`)
+2. **Внешние функции** (для типов с функциями `Serialize`/`Deserialize`)
+3. **Методы класса** (для типов с методами `Serialize`/`Deserialize`)
 4. **Специализации** (для `std::string`, `std::vector<T>`, etc.)
 
 ### Обработка ошибок
@@ -363,7 +363,7 @@ if (!file) {
     return false;
 }
 
-if (!serializer->serialize(data, file)) {
+if (!serializer->Serialize(data, file)) {
     // Обработка ошибки сериализации
     fclose(file);
     return false;
@@ -555,12 +555,12 @@ public:
     }
     
     // Методы сериализации
-    bool serialize(FILE* file) const {
+    bool Serialize(FILE* file) const {
         fwrite(&x, sizeof(int), 1, file);
         return fwrite(&y, sizeof(int), 1, file) == 1;
     }
     
-    bool deserialize(FILE* file) {
+    bool Deserialize(FILE* file) {
         fread(&x, sizeof(int), 1, file);
         return fread(&y, sizeof(int), 1, file) == 1;
     }
@@ -583,14 +583,14 @@ public:
 };
 
 // Внешние функции сериализации (в том же пространстве имен, что и тип или с ADL)
-bool serialize(const Person& person, FILE* file) {
+bool Serialize(const Person& person, FILE* file) {
     uint64_t length = person.name.length();
     fwrite(&length, sizeof(uint64_t), 1, file);
     fwrite(person.name.data(), sizeof(char), length, file);
     return fwrite(&person.age, sizeof(int), 1, file) == 1;
 }
 
-bool deserialize(Person& person, FILE* file) {
+bool Deserialize(Person& person, FILE* file) {
     uint64_t length;
     fread(&length, sizeof(uint64_t), 1, file);
     person.name.resize(length);

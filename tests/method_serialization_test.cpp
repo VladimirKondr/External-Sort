@@ -1,6 +1,6 @@
 /**
  * @file method_serialization_test.cpp
- * @brief Тесты для method-based сериализации (классы с методами serialize/deserialize)
+ * @brief Тесты для method-based сериализации (классы с методами Serialize/Deserialize)
  * @author External Sort Library
  * @version 1.0
  */
@@ -44,13 +44,13 @@ class MethodSerializationTest : public ::testing::Test {
 
         FILE* file = fopen(test_file.c_str(), "wb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->serialize(original, file));
+        EXPECT_TRUE(serializer->Serialize(original, file));
         fclose(file);
 
         T restored{};
         file = fopen(test_file.c_str(), "rb");
         ASSERT_NE(file, nullptr);
-        EXPECT_TRUE(serializer->deserialize(restored, file));
+        EXPECT_TRUE(serializer->Deserialize(restored, file));
         fclose(file);
 
         EXPECT_EQ(original, restored);
@@ -72,14 +72,14 @@ class SimplePoint {
 
     virtual ~SimplePoint() = default;
 
-    bool serialize(FILE* file) const {
+    bool Serialize(FILE* file) const {
         if (fwrite(&x, sizeof(int), 1, file) != 1) {
             return false;
         }
         return fwrite(&y, sizeof(int), 1, file) == 1;
     }
 
-    bool deserialize(FILE* file) {
+    bool Deserialize(FILE* file) {
         if (fread(&x, sizeof(int), 1, file) != 1) {
             return false;
         }
@@ -104,7 +104,7 @@ class VariableData {
     VariableData(const std::string& n, const std::vector<int>& v) : name(n), values(v) {
     }
 
-    bool serialize(FILE* file) const {
+    bool Serialize(FILE* file) const {
         uint64_t name_size = name.size();
         if (fwrite(&name_size, sizeof(uint64_t), 1, file) != 1) {
             return false;
@@ -126,7 +126,7 @@ class VariableData {
         return true;
     }
 
-    bool deserialize(FILE* file) {
+    bool Deserialize(FILE* file) {
         uint64_t name_size;
         if (fread(&name_size, sizeof(uint64_t), 1, file) != 1) {
             return false;
@@ -173,12 +173,12 @@ class ComplexObject {
         : coefficient(coeff), position(pos), points(pts) {
     }
 
-    bool serialize(FILE* file) const {
+    bool Serialize(FILE* file) const {
         if (fwrite(&coefficient, sizeof(double), 1, file) != 1) {
             return false;
         }
 
-        if (!position.serialize(file)) {
+        if (!position.Serialize(file)) {
             return false;
         }
 
@@ -187,7 +187,7 @@ class ComplexObject {
             return false;
         }
         for (const auto& point : points) {
-            if (!point.serialize(file)) {
+            if (!point.Serialize(file)) {
                 return false;
             }
         }
@@ -195,12 +195,12 @@ class ComplexObject {
         return true;
     }
 
-    bool deserialize(FILE* file) {
+    bool Deserialize(FILE* file) {
         if (fread(&coefficient, sizeof(double), 1, file) != 1) {
             return false;
         }
 
-        if (!position.deserialize(file)) {
+        if (!position.Deserialize(file)) {
             return false;
         }
 
@@ -210,7 +210,7 @@ class ComplexObject {
         }
         points.resize(points_size);
         for (auto& point : points) {
-            if (!point.deserialize(file)) {
+            if (!point.Deserialize(file)) {
                 return false;
             }
         }
@@ -286,10 +286,10 @@ TEST_F(MethodSerializationTest, SerializationErrors) {
     ASSERT_NE(file, nullptr);
     fclose(file);
 
-    EXPECT_FALSE(serializer->serialize(point, file));
+    EXPECT_FALSE(serializer->Serialize(point, file));
 
     SimplePoint restored_point;
-    EXPECT_FALSE(serializer->deserialize(restored_point, file));
+    EXPECT_FALSE(serializer->Deserialize(restored_point, file));
 
     file = fopen(test_file.c_str(), "wb");
     ASSERT_NE(file, nullptr);
@@ -297,7 +297,7 @@ TEST_F(MethodSerializationTest, SerializationErrors) {
 
     file = fopen(test_file.c_str(), "rb");
     ASSERT_NE(file, nullptr);
-    EXPECT_FALSE(serializer->deserialize(restored_point, file));
+    EXPECT_FALSE(serializer->Deserialize(restored_point, file));
     fclose(file);
 
     file = fopen(test_file.c_str(), "wb");
@@ -308,7 +308,7 @@ TEST_F(MethodSerializationTest, SerializationErrors) {
 
     file = fopen(test_file.c_str(), "rb");
     ASSERT_NE(file, nullptr);
-    EXPECT_FALSE(serializer->deserialize(restored_point, file));
+    EXPECT_FALSE(serializer->Deserialize(restored_point, file));
     fclose(file);
 }
 
@@ -330,7 +330,7 @@ TEST_F(MethodSerializationTest, BulkSerialization) {
     ASSERT_NE(file, nullptr);
 
     for (const auto& point : test_data) {
-        EXPECT_TRUE(serializer->serialize(point, file));
+        EXPECT_TRUE(serializer->Serialize(point, file));
     }
     fclose(file);
 
@@ -342,7 +342,7 @@ TEST_F(MethodSerializationTest, BulkSerialization) {
 
     for (uint64_t i = 0; i < test_size; ++i) {
         SimplePoint point;
-        EXPECT_TRUE(serializer->deserialize(point, file));
+        EXPECT_TRUE(serializer->Deserialize(point, file));
         restored_data.push_back(point);
     }
     fclose(file);
