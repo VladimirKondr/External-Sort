@@ -2,6 +2,26 @@
  * @file serializers.hpp
  * @brief Serializers implementations for some types
  * @author Serialization Library
+ * 
+ * @section adding_serialization Adding Serialization Support
+ * 
+ * **For std:: or external namespace types:**
+ * 
+ * 1. Add forward declaration in `type_concepts.hpp`:
+ * @code{.cpp}
+ * namespace serialization {
+ *     bool Serialize(const std::your_type& obj, FILE* file);
+ *     bool Deserialize(std::your_type& obj, FILE* file);
+ * }
+ * @endcode
+ * 
+ * 2. Add implementation in this file within `serialization` namespace.
+ * 
+ * **Alternative:** Create a wrapper type with Serialize/Deserialize methods
+ * or Serialize/Deserialize free functions in its' namespace.
+ * 
+ * @see serialization::CreateSerializer
+ * @see type_concepts.hpp for serialization concepts
  */
 
 #pragma once
@@ -47,6 +67,14 @@ class Serializer {
      */
     virtual bool Deserialize(T& obj, FILE* file) = 0;
 };
+}  // namespace serialization::detail
+
+namespace serialization {
+template <typename T>
+std::unique_ptr<detail::Serializer<T>> CreateSerializer();
+}  // namespace serialization
+
+namespace serialization::detail {
 
 /**
  * @brief Serializer for POD types
@@ -66,20 +94,6 @@ class PodSerializer : public Serializer<T> {
 };
 
 /**
- * @brief Helpers for ADL
- */
-
-template <typename T>
-bool AdlSerialize(const T& obj, FILE* file) {
-    return Serialize(obj, file);
-}
-
-template <typename T>
-bool AdlDeserialize(T& obj, FILE* file) {
-    return Deserialize(obj, file);
-}
-
-/**
  * @brief Serializer for types with free function serialization
  *
  * @see serialization::CustomSerializable
@@ -88,12 +102,12 @@ template <CustomSerializable T>
 class CustomFunctionSerializer : public Serializer<T> {
    public:
     bool Serialize(const T& obj, FILE* file) override {
-        bool result = AdlSerialize(obj, file);
+        bool result = detail_adl::AdlSerialize(obj, file);
         return result && (ferror(file) == 0);
     }
 
     bool Deserialize(T& obj, FILE* file) override {
-        bool result = AdlDeserialize(obj, file);
+        bool result = detail_adl::AdlDeserialize(obj, file);
         return result && (ferror(file) == 0) && (feof(file) == 0);
     }
 };
@@ -115,20 +129,23 @@ class MethodSerializer : public Serializer<T> {
     }
 };
 
+}  // namespace serialization::detail
+
+namespace serialization {
 /**
  * @brief Serializer factory
  *
  * Creates appropriate serializer based on type traits
  */
 template <typename T>
-std::unique_ptr<Serializer<T>> CreateSerializer() {
+std::unique_ptr<detail::Serializer<T>> CreateSerializer() {
     static_assert(FileSerializable<T>, "Type must be serializable to be used with this library");
     if constexpr (PodSerializable<T>) {
-        return std::make_unique<PodSerializer<T>>();
+        return std::make_unique<detail::PodSerializer<T>>();
     } else if constexpr (CustomSerializable<T>) {
-        return std::make_unique<CustomFunctionSerializer<T>>();
+        return std::make_unique<detail::CustomFunctionSerializer<T>>();
     } else if constexpr (MethodSerializable<T>) {
-        return std::make_unique<MethodSerializer<T>>();
+        return std::make_unique<detail::MethodSerializer<T>>();
     } else {
         throw std::logic_error("No serializer found for type " + std::string(typeid(T).name()));
     }
@@ -191,4 +208,4 @@ inline bool Deserialize(std::vector<T>& obj, FILE* file) {
     return true;
 }
 
-}  // namespace serialization::detail
+}  // namespace serialization

@@ -9,8 +9,21 @@
 #include <concepts>
 #include <cstdio>
 #include <type_traits>
+#include <string>
+#include <vector>
 
 namespace serialization {
+
+// Forward declarations for serialization functions
+// Actual implementations are in serializers.hpp
+bool Serialize(const std::string& obj, FILE* file);
+bool Deserialize(std::string& obj, FILE* file);
+
+template <typename T>
+bool Serialize(const std::vector<T>& obj, FILE* file);
+
+template <typename T>
+bool Deserialize(std::vector<T>& obj, FILE* file);
 
 /**
  * @brief Concept for POD types that can be serialized through fwrite/fread
@@ -28,11 +41,32 @@ template <typename T>
 concept PodSerializable = std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>;
 
 /**
+ * @brief Helpers for ADL - defined in a nested namespace
+ * 
+ * These functions use unqualified lookup which enables ADL.
+ * They will find Serialize/Deserialize either:
+ * - In the namespace of the type T (via ADL)
+ * - In the serialization namespace (via normal lookup)
+ */
+namespace detail_adl {
+template <typename T>
+auto AdlSerialize(const T& obj, FILE* file) -> decltype(Serialize(obj, file)) {
+    return Serialize(obj, file);
+}
+
+template <typename T>
+auto AdlDeserialize(T& obj, FILE* file) -> decltype(Deserialize(obj, file)) {
+    return Deserialize(obj, file);
+}
+}  // namespace detail_adl
+
+/**
  * @brief Concept for types with custom serialization through free functions
  *
  * Checks that type has free functions Serialize and Deserialize.
- * These functions should be defined in the same namespace as the type for ADL
- * (Argument-Dependent Lookup) to work.
+ * These functions can be defined either:
+ * 1. In the serialization namespace (for std types like std::string, std::vector)
+ * 2. In the same namespace as the type for ADL (Argument-Dependent Lookup)
  *
  * Functions must have the following signatures:
  * @code{.cpp}
@@ -49,8 +83,8 @@ concept PodSerializable = std::is_trivially_copyable_v<T> && std::is_standard_la
  */
 template <typename T>
 concept CustomSerializable = requires(const T& obj, T& obj_mut, FILE* file) {
-    { Serialize(obj, file) } -> std::same_as<bool>;
-    { Deserialize(obj_mut, file) } -> std::same_as<bool>;
+    { detail_adl::AdlSerialize(obj, file) } -> std::same_as<bool>;
+    { detail_adl::AdlDeserialize(obj_mut, file) } -> std::same_as<bool>;
 };
 
 /**
