@@ -1,0 +1,17 @@
+bazel-*
+bazel-bin/
+bazel-out/
+bazel-testlogs/
+bazel-new_external_sort/
+input.bin
+output.bin
+*.py
+*.tpp
+external_sort_merged.cpp
+tests/
+src/create_random_test.cpp
+src/create_test_input.cpp
+src/demo.cpp
+src/main.cpp
+src/external_sort_task.cpp
+

@@ -1,128 +1,63 @@
 _old_project/
 
-bazel-*
-.bazel-cache/
+# Created by https://www.toptal.com/developers/gitignore/api/bazel,doxygen,c++
+# Edit at https://www.toptal.com/developers/gitignore?templates=bazel,doxygen,c++
 
+### Bazel ###
+# gitignore template for Bazel build system
+# website: https://bazel.build/
 
-/build/
-/cmake-build-*/
+# Ignore all bazel-* symlinks. There is no full list since this can change
+# based on the name of the directory bazel is cloned into.
+/bazel-*
 
+# Directories for the Bazel IntelliJ plugin containing the generated
+# IntelliJ project files and plugin configuration. Seperate directories are
+# for the IntelliJ, Android Studio and CLion versions of the plugin.
+/.ijwb/
+/.aswb/
+/.clwb/
 
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+### C++ ###
+# Prerequisites
+*.d
 
-
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-
+# Compiled Object files
 *.slo
 *.lo
 *.o
 *.obj
 
-
+# Precompiled Headers
 *.gch
 *.pch
 
-
+# Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
 
-
+# Fortran module files
 *.mod
 *.smod
 
-
+# Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
 
-
+# Executables
 *.exe
 *.out
 *.app
 
+### Doxygen ###
+html
+latex
+.cache
 
-*.bin
-*.dat
-input.bin
-output.bin
-temp_*
-ts/
-temp_sort*/
-
-
-.personal_readme.md
-*.personal.*
-notes/
-*.notes
-
-
-*.log
-
-
-*.gcov
-*.gcda
-*.gcno
-
-
-*.prof
-gmon.out
-
-
+.vscode
 compile_commands.json
-.clang_complete
-.ycm_extra_conf.py
 
-
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-
-
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-
-
-docs/build/
-docs/_build/
-
-
-.#*
-\#*#
-.emacs.desktop
-.emacs.desktop.lock
-*.dll
-
-*.log
-
-.vscode/
-
-.DS_Store
-
-
-.clangd/
-.clangd
-.clang-tidy-ignore
-.clangd-ignore
-.clangd
-
-input.bin
-output.bin
-
-external_sort_merged.cpp
-compile_commands.json
+# End of https://www.toptal.com/developers/gitignore/api/bazel,doxygen,c++
