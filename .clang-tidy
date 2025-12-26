@@ -1,46 +1,6 @@
 ---
-UseColor: true
-Checks: >
-  *,
-  -altera-id-dependent-backward-branch,
-  -altera-struct-pack-align,
-  -altera-unroll-loops,
-  boost-*,
-  bugprone-*,
-  -bugprone-chained-comparison,
-  -bugprone-easily-swappable-parameters,
-  cert-*,
-  -cert-dcl21-cpp,
-  clang-analyzer-*,
-  -clang-analyzer-cplusplus.NewDelete,
-  -clang-analyzer-cplusplus.NewDeleteLeaks,
-  -clang-analyzer-optin.core.EnumCastOutOfRange,
-  concurrency-*,
-  cppcoreguidelines-*,
-  -cppcoreguidelines-avoid-magic-numbers,
-  -cppcoreguidelines-pro-type-vararg,
-  google-*,
-  hicpp-avoid-goto,
-  -llvm-include-order,
-  llvm-namespace-comment,
-  -llvm-header-guard,
-  -llvmlibc-callee-namespace,
-  -llvmlibc-implementation-in-namespace,
-  -llvmlibc-inline-function-decl,
-  -llvmlibc-restrict-system-libc-headers,
-  misc-*,
-  -misc-no-recursion,
-  modernize-*,
-  -modernize-use-trailing-return-type,
-  performance-*,
-  readability-*,
-  -readability-identifier-length,
-  readability-implicit-bool-conversion,
-  -readability-magic-numbers,
-  -fuchsia-default-arguments-calls,
-  -fuchsia-overloaded-operator,
-  -fuchsia-default-arguments-declarations
-HeaderFilterRegex: '\.(h|hpp|tpp)$'
+Checks: '-*,cppcoreguidelines-avoid-goto,cppcoreguidelines-pro-type-const-cast, google-readability-casting, google-runtime-int, modernize-replace-random-shuffle, modernize-use-nullptr, readability-braces-around-statements, readability-container-size-empty, readability-redundant-control-flow, readability-redundant-string-init, readability-identifier-naming, google-build-using-namespace'
+HeaderFilterRegex: '\.h$'
 WarningsAsErrors: '*'
 CheckOptions:
   - key: readability-identifier-naming.NamespaceCase
@@ -51,6 +11,8 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.TypeAliasCase
     value: CamelCase
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: '_'
   - key: readability-identifier-naming.PrivateMemberSuffix
     value: '_'
   - key: readability-identifier-naming.StructCase
@@ -59,7 +21,7 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.VariableCase
     value: lower_case
-  - key: readability-identifier-naming.PrivateMemberCase
+  - key: readability-identifier-naming.MemberCase
     value: lower_case
   - key: readability-identifier-naming.ParameterCase
     value: lower_case
@@ -82,6 +44,6 @@ CheckOptions:
   - key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp
     value: ^expr-type$
   - key: readability-identifier-naming.FunctionIgnoredRegexp
-    value: ^(begin|end)$
+    value: ^(begin|end|(kdtree.*))$
   - key: readability-identifier-naming.TypeAliasIgnoredRegexp
-    value: ^(iterator_category|value_type|difference_type|pointer|reference|iterator_type|iterator_concept)$
+    value: ^(is_transparent|iterator_category|value_type|difference_type|pointer|reference|iterator_type|iterator_concept)$
