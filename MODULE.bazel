@@ -1,16 +1,18 @@
+"""External sort module for sorting large files that don't fit in memory."""
+
 module(
-    name = "new_external_sort",
+    name = "external_sort",
     version = "1.0",
     compatibility_level = 1,
 )
 
+bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_cc", version = "0.1.1")
-bazel_dep(name = "googletest", version = "1.17.0")
-
+bazel_dep(name = "googletest", version = "1.14.0.bcr.1")
 
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
+    commit = "abb61a688167623088f8768cc9264798df6a9d10",
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
-    commit = "4f28899228fb3ad0126897876f147ca15026151e",
 )
