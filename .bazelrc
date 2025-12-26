@@ -1,0 +1,10 @@
+build --cxxopt="-std=c++20"
+build --host_cxxopt="-std=c++20"
+build --action_env=BAZEL_CXXOPTS="-std=c++20"
+
+build:clangd --cxxopt="-std=c++20"
+build:clangd --host_cxxopt="-std=c++20"
+build:clangd --compilation_mode=dbg
+build:clangd --copt="-g"
+build:clangd --cxxopt="-g"
+build:clangd --features=debug_prefix_map_pwd_is_dot
