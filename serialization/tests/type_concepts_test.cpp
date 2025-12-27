@@ -1,7 +1,6 @@
 /**
  * @file type_concepts_test.cpp
  * @brief Tests for validating type concepts
- * @author Serialization Library
  */
 
 #include "type_concepts.hpp"

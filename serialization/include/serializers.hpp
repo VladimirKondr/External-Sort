@@ -1,7 +1,6 @@
 /**
  * @file serializers.hpp
  * @brief Serializers implementations for some types
- * @author Serialization Library
  *
  * @section adding_serialization Adding Serialization Support
  *

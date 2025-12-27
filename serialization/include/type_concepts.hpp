@@ -1,7 +1,6 @@
 /**
  * @file type_concepts.hpp
  * @brief Concepts for checking types in serialization library
- * @author Serialization Library
  */
 
 #pragma once
