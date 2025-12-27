@@ -1,0 +1,77 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "logging_interface",
+    hdrs = [
+        "include/ILogger.hpp",
+        "include/NullLogger.hpp",
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+)
+
+cc_library(
+    name = "logging_adapter",
+    hdrs = [
+        "include/LoggerAdapter.hpp",
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+    deps = [":logging_interface"],
+)
+
+cc_library(
+    name = "logging_registry",
+    hdrs = [
+        "include/Registry.hpp",
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+    deps = [
+        ":logging_adapter",
+        ":logging_interface",
+    ],
+)
+
+cc_library(
+    name = "logging",
+    hdrs = [
+        "include/ILogger.hpp",
+        "include/LoggerAdapter.hpp",
+        "include/NullLogger.hpp",
+        "include/Registry.hpp",
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+    deps = [
+        ":logging_adapter",
+        ":logging_interface",
+        ":logging_registry",
+    ],
+)
+
+cc_library(
+    name = "default_logger",
+    srcs = ["src/DefaultLogger.cpp"],
+    hdrs = [
+        "include/ILogger.hpp",
+        "include/NullLogger.hpp",
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+    deps = [":logging_interface"],
+)
+
+cc_library(
+    name = "spdlog_wrapper",
+    srcs = ["src/SpdlogWrapper.cpp"],
+    hdrs = ["include/SpdlogWrapper.hpp"],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+    deps = [
+        ":logging_interface",
+        "@spdlog",
+    ],
+)
