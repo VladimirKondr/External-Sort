@@ -2,11 +2,15 @@ build --cxxopt="-std=c++20"
 build --host_cxxopt="-std=c++20"
 build --action_env=BAZEL_CXXOPTS="-std=c++20"
 
-# отключаем серверный режим
+test --nocache_test_results
+test --test_output=errors
+
+test --local_test_jobs=auto
+test --test_timeout=30
+
 startup --batch
 startup --host_jvm_args=-Djdk.tls.client.protocols=TLSv1.2
 
-# настройки реестра
 common --registry=https://raw.githubusercontent.com/bazelbuild/bazel-central-registry/main/
 common --registry=https://registry.bazel.build/
 
