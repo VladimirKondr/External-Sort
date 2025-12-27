@@ -22,7 +22,7 @@ using serialization::MethodSerializable;
 using serialization::PodSerializable;
 
 /**
- * @brief Пространство имен для тестовых типов
+ * @brief Namespace for test types
  */
 namespace concept_test_types {
 
@@ -102,7 +102,7 @@ bool Deserialize(WithAdlFunctions& obj, FILE* file) {
 }  // namespace concept_test_types
 
 /**
- * @brief Тест валидации концептов типов
+ * @brief Test fixture for type concept validation
  */
 class ConceptValidationTest : public ::testing::Test {
    protected:
@@ -124,7 +124,7 @@ class ConceptValidationTest : public ::testing::Test {
 
 
 /**
- * @brief Тест функциональности всех типов сериализаторов
+ * @brief Test for all serializer types functionality
  */
 TEST_F(ConceptValidationTest, SerializerFunctionality) {
     {
@@ -184,7 +184,7 @@ TEST_F(ConceptValidationTest, SerializerFunctionality) {
 
 
 /**
- * @brief Тест специализаций для std::string и std::vector
+ * @brief Test for std::string and std::vector specializations
  */
 TEST_F(ConceptValidationTest, SpecializedSerializers) {
     {

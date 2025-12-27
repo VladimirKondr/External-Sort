@@ -22,7 +22,7 @@ using serialization::MethodSerializable;
 using serialization::PodSerializable;
 
 /**
- * @brief Пространство имен для тестовых типов
+ * @brief Namespace for test types
  */
 namespace concept_test_types {
 
@@ -128,7 +128,7 @@ class WithWrongParameters {
 }  // namespace concept_test_types
 
 /**
- * @brief Тест валидации концептов типов
+ * @brief Test fixture for type concept validation
  */
 class ConceptValidationTest : public ::testing::Test {
    protected:
@@ -149,7 +149,7 @@ class ConceptValidationTest : public ::testing::Test {
 };
 
 /**
- * @brief Тест концепта PodSerializable
+ * @brief Test for PodSerializable concept
  */
 TEST_F(ConceptValidationTest, PodSerializableConcept) {
     static_assert(PodSerializable<int>);
@@ -169,7 +169,7 @@ TEST_F(ConceptValidationTest, PodSerializableConcept) {
 }
 
 /**
- * @brief Тест концепта MethodSerializable
+ * @brief Test for MethodSerializable concept
  */
 TEST_F(ConceptValidationTest, MethodSerializableConcept) {
     static_assert(MethodSerializable<concept_test_types::WithMethods>);
@@ -184,7 +184,7 @@ TEST_F(ConceptValidationTest, MethodSerializableConcept) {
 }
 
 /**
- * @brief Тест концепта CustomSerializable
+ * @brief Test for CustomSerializable concept
  */
 TEST_F(ConceptValidationTest, CustomSerializableConcept) {
     static_assert(CustomSerializable<concept_test_types::OnlyAdlFunctions>);
@@ -197,7 +197,7 @@ TEST_F(ConceptValidationTest, CustomSerializableConcept) {
 }
 
 /**
- * @brief Тест концепта FileSerializable
+ * @brief Test for FileSerializable concept
  */
 TEST_F(ConceptValidationTest, FileSerializableConcept) {
     static_assert(FileSerializable<int>);
@@ -213,7 +213,7 @@ TEST_F(ConceptValidationTest, FileSerializableConcept) {
 }
 
 /**
- * @brief Тест ошибок компиляции для несериализуемых типов
+ * @brief Test for compilation errors with non-serializable types
  */
 TEST_F(ConceptValidationTest, CompilationErrors) {
     static_assert(!FileSerializable<concept_test_types::NonSerializable>);
