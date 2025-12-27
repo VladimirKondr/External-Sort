@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "../../logging/include/Registry.hpp"
+
 using serialization::CreateSerializer;
 using serialization::CustomSerializable;
 using serialization::FileSerializable;
@@ -36,13 +38,13 @@ struct SimplePod {
 class NonSerializable {
     std::unique_ptr<int> ptr_;
 
-   public:
+public:
     NonSerializable() : ptr_(std::make_unique<int>(42)) {
     }
 };
 
 class WithMethods {
-   public:
+public:
     int value;
 
     WithMethods() : value(0) {
@@ -99,7 +101,7 @@ bool Deserialize(WithAdlFunctions& obj, FILE* file) {
 }
 
 class WithWrongMethods {
-   public:
+public:
     int value;
 
     void Serialize(FILE* file) const {
@@ -112,7 +114,7 @@ class WithWrongMethods {
 };
 
 class WithWrongParameters {
-   public:
+public:
     int value;
 
     bool Serialize(int) const {
@@ -130,8 +132,10 @@ class WithWrongParameters {
  * @brief Test fixture for type concept validation
  */
 class ConceptValidationTest : public ::testing::Test {
-   protected:
+protected:
     void SetUp() override {
+        logging::SetDefaultLogger();
+
         test_file_ = "concept_test.bin";
         if (std::filesystem::exists(test_file_)) {
             std::filesystem::remove(test_file_);

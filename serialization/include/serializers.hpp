@@ -40,7 +40,34 @@
 #include <string>
 #include <vector>
 
+// Include logging support
+#include "../../logging/include/Registry.hpp"
+
 namespace serialization {
+
+namespace detail {
+// Helper functions to safely log messages
+inline void LogError(const std::string& message) {
+    auto& logger = logging::detail::GetLoggerInstance();
+    if (logger) {
+        logger->LogError("[Serialization] " + message);
+    }
+}
+
+inline void LogWarning(const std::string& message) {
+    auto& logger = logging::detail::GetLoggerInstance();
+    if (logger) {
+        logger->LogWarning("[Serialization] " + message);
+    }
+}
+
+inline void LogInfo(const std::string& message) {
+    auto& logger = logging::detail::GetLoggerInstance();
+    if (logger) {
+        logger->LogInfo("[Serialization] " + message);
+    }
+}
+}  // namespace detail
 
 /**
  * @brief Base interface for serializable types
@@ -86,11 +113,19 @@ template <PodSerializable T>
 class PodSerializer : public Serializer<T> {
 public:
     bool Serialize(const T& obj, FILE* file) override {
-        return fwrite(&obj, sizeof(T), 1, file) == 1;
+        bool result = fwrite(&obj, sizeof(T), 1, file) == 1;
+        if (!result) {
+            detail::LogError("Failed to serialize POD type of size " + std::to_string(sizeof(T)));
+        }
+        return result;
     }
 
     bool Deserialize(T& obj, FILE* file) override {
-        return fread(&obj, sizeof(T), 1, file) == 1;
+        bool result = fread(&obj, sizeof(T), 1, file) == 1;
+        if (!result) {
+            detail::LogError("Failed to deserialize POD type of size " + std::to_string(sizeof(T)));
+        }
+        return result;
     }
 };
 
@@ -104,12 +139,20 @@ class CustomFunctionSerializer : public Serializer<T> {
 public:
     bool Serialize(const T& obj, FILE* file) override {
         bool result = detail_adl::AdlSerialize(obj, file);
-        return result && (ferror(file) == 0);
+        result = result && (ferror(file) == 0);
+        if (!result) {
+            detail::LogError("Custom serialization failed for type");
+        }
+        return result;
     }
 
     bool Deserialize(T& obj, FILE* file) override {
         bool result = detail_adl::AdlDeserialize(obj, file);
-        return result && (ferror(file) == 0) && (feof(file) == 0);
+        result = result && (ferror(file) == 0) && (feof(file) == 0);
+        if (!result) {
+            detail::LogError("Custom deserialization failed for type");
+        }
+        return result;
     }
 };
 
@@ -151,63 +194,6 @@ std::unique_ptr<Serializer<T>> CreateSerializer() {
     }
 }
 
-/**
- * @brief Serialization for std::string
- */
-
-inline bool Serialize(const std::string& obj, FILE* file) {
-    uint64_t length = obj.length();
-    if (fwrite(&length, sizeof(uint64_t), 1, file) != 1) {
-        return false;
-    }
-    return fwrite(obj.data(), sizeof(char), length, file) == length;
-}
-
-inline bool Deserialize(std::string& obj, FILE* file) {
-    uint64_t length = 0;
-    if (fread(&length, sizeof(uint64_t), 1, file) != 1) {
-        return false;
-    }
-    obj.resize(length);
-    return fread(obj.data(), sizeof(char), length, file) == length;
-}
-
-/**
- * @brief Serialization for std::vector
- */
-template <typename T>
-inline bool Serialize(const std::vector<T>& obj, FILE* file) {
-    uint64_t size = obj.size();
-    if (fwrite(&size, sizeof(uint64_t), 1, file) != 1) {
-        return false;
-    }
-
-    auto item_serializer = CreateSerializer<T>();
-    for (const auto& item : obj) {
-        if (!item_serializer->Serialize(item, file)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-template <typename T>
-inline bool Deserialize(std::vector<T>& obj, FILE* file) {
-    uint64_t size = 0;
-    if (fread(&size, sizeof(uint64_t), 1, file) != 1) {
-        return false;
-    }
-
-    obj.resize(size);
-    auto item_serializer = CreateSerializer<T>();
-    for (auto& item : obj) {
-        if (!item_serializer->Deserialize(item, file)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 template <>
 class Serializer<std::string> {
 public:
@@ -215,18 +201,28 @@ public:
     bool Serialize(const std::string& obj, FILE* file) {
         uint64_t length = obj.length();
         if (fwrite(&length, sizeof(uint64_t), 1, file) != 1) {
+            detail::LogError("Failed to write string length: " + std::to_string(length));
             return false;
         }
-        return fwrite(obj.data(), sizeof(char), length, file) == length;
+        if (fwrite(obj.data(), sizeof(char), length, file) != length) {
+            detail::LogError("Failed to write string data of length: " + std::to_string(length));
+            return false;
+        }
+        return true;
     }
 
     bool Deserialize(std::string& obj, FILE* file) {
         uint64_t length;
         if (fread(&length, sizeof(uint64_t), 1, file) != 1) {
+            detail::LogError("Failed to read string length");
             return false;
         }
         obj.resize(length);
-        return fread(&obj[0], sizeof(char), length, file) == length;
+        if (fread(&obj[0], sizeof(char), length, file) != length) {
+            detail::LogError("Failed to read string data of length: " + std::to_string(length));
+            return false;
+        }
+        return true;
     }
 };
 
@@ -238,12 +234,14 @@ public:
     bool Serialize(const std::vector<T>& obj, FILE* file) {
         uint64_t size = obj.size();
         if (fwrite(&size, sizeof(uint64_t), 1, file) != 1) {
+            detail::LogError("Failed to write vector size: " + std::to_string(size));
             return false;
         }
 
         auto item_serializer = CreateSerializer<T>();
-        for (const auto& item : obj) {
-            if (!item_serializer->Serialize(item, file)) {
+        for (size_t i = 0; i < obj.size(); ++i) {
+            if (!item_serializer->Serialize(obj[i], file)) {
+                detail::LogError("Failed to serialize vector element at index: " + std::to_string(i));
                 return false;
             }
         }
@@ -253,13 +251,15 @@ public:
     bool Deserialize(std::vector<T>& obj, FILE* file) {
         uint64_t size;
         if (fread(&size, sizeof(uint64_t), 1, file) != 1) {
+            detail::LogError("Failed to read vector size");
             return false;
         }
 
         obj.resize(size);
         auto item_serializer = CreateSerializer<T>();
-        for (auto& item : obj) {
-            if (!item_serializer->Deserialize(item, file)) {
+        for (size_t i = 0; i < size; ++i) {
+            if (!item_serializer->Deserialize(obj[i], file)) {
+                detail::LogError("Failed to deserialize vector element at index: " + std::to_string(i));
                 return false;
             }
         }
