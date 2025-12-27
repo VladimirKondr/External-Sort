@@ -9,21 +9,12 @@
 #include <concepts>
 #include <cstdio>
 #include <type_traits>
-#include <string>
-#include <vector>
 
 namespace serialization {
 
-// Forward declarations for serialization functions
-// Actual implementations are in serializers.hpp
-bool Serialize(const std::string& obj, FILE* file);
-bool Deserialize(std::string& obj, FILE* file);
-
+// Forward declaration of Serializer
 template <typename T>
-bool Serialize(const std::vector<T>& obj, FILE* file);
-
-template <typename T>
-bool Deserialize(std::vector<T>& obj, FILE* file);
+class Serializer;
 
 /**
  * @brief Concept for POD types that can be serialized through fwrite/fread
@@ -112,6 +103,22 @@ concept MethodSerializable = requires(const T& obj, T& obj_mut, FILE* file) {
 };
 
 /**
+ * @brief Concept for types with Serializer specialization
+ *
+ * Checks that type has a specialization of class Serializer
+ *
+ * Specialization must define
+ * @code{.cpp}
+ * using Specialized = std::true_type;
+ * @endcode
+ *
+ * @see serialization::Serializer
+ * @see serialization::Serializer<std::string>
+ */
+template <typename T>
+concept SpecializedSerializable = Serializer<T>::Specialized::value;
+
+/**
  * @brief Concept for types that can be serialized into files.
  *
  * Types must satisfy one of the following concepts:
@@ -124,6 +131,6 @@ concept MethodSerializable = requires(const T& obj, T& obj_mut, FILE* file) {
  * @see serialization::MethodSerializable
  */
 template <typename T>
-concept FileSerializable = PodSerializable<T> || CustomSerializable<T> || MethodSerializable<T>;
+concept FileSerializable = PodSerializable<T> || CustomSerializable<T> || MethodSerializable<T> || SpecializedSerializable<T>;
 
 }  // namespace serialization

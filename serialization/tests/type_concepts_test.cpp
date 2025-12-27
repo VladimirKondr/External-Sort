@@ -20,7 +20,6 @@ using serialization::CustomSerializable;
 using serialization::FileSerializable;
 using serialization::MethodSerializable;
 using serialization::PodSerializable;
-using serialization::detail::PodSerializer;
 
 /**
  * @brief Пространство имен для тестовых типов
@@ -209,6 +208,7 @@ TEST_F(ConceptValidationTest, FileSerializableConcept) {
     static_assert(FileSerializable<std::string>);
     static_assert(FileSerializable<std::vector<int>>);
 
+    static_assert(!serialization::SpecializedSerializable<concept_test_types::NonSerializable>);
     static_assert(!FileSerializable<concept_test_types::NonSerializable>);
 }
 

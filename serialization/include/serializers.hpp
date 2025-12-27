@@ -2,25 +2,33 @@
  * @file serializers.hpp
  * @brief Serializers implementations for some types
  * @author Serialization Library
- * 
+ *
  * @section adding_serialization Adding Serialization Support
- * 
+ *
  * **For std:: or external namespace types:**
- * 
- * 1. Add forward declaration in `type_concepts.hpp`:
+ *
+ * 1. Add serialization::Serializer specialization in `type_concepts.hpp`:
  * @code{.cpp}
- * namespace serialization {
- *     bool Serialize(const std::your_type& obj, FILE* file);
- *     bool Deserialize(std::your_type& obj, FILE* file);
- * }
+ * template <>
+ * class Serializer<std::string> {
+ * public:
+ *     using Specialized = std::true_type;
+ * 
+ *     bool Serialize(const std::string& obj, FILE* file) {
+ *         ...
+ *     }
+ * 
+ *     bool Deserialize(std::string& obj, FILE* file) {
+ *         ...
+ *     }
+ * };
  * @endcode
- * 
- * 2. Add implementation in this file within `serialization` namespace.
- * 
+ *
  * **Alternative:** Create a wrapper type with Serialize/Deserialize methods
  * or Serialize/Deserialize free functions in its' namespace.
- * 
+ *
  * @see serialization::CreateSerializer
+ * @see serialization::Serializer<std::vector<T>>
  * @see type_concepts.hpp for serialization concepts
  */
 
@@ -33,14 +41,16 @@
 #include <string>
 #include <vector>
 
-namespace serialization::detail {
+namespace serialization {
 
 /**
  * @brief Base interface for serializable types
  */
 template <typename T>
 class Serializer {
-   public:
+public:
+    using Specialized = std::false_type;
+
     virtual ~Serializer() = default;
 
     Serializer() = default;
@@ -67,14 +77,6 @@ class Serializer {
      */
     virtual bool Deserialize(T& obj, FILE* file) = 0;
 };
-}  // namespace serialization::detail
-
-namespace serialization {
-template <typename T>
-std::unique_ptr<detail::Serializer<T>> CreateSerializer();
-}  // namespace serialization
-
-namespace serialization::detail {
 
 /**
  * @brief Serializer for POD types
@@ -83,7 +85,7 @@ namespace serialization::detail {
  */
 template <PodSerializable T>
 class PodSerializer : public Serializer<T> {
-   public:
+public:
     bool Serialize(const T& obj, FILE* file) override {
         return fwrite(&obj, sizeof(T), 1, file) == 1;
     }
@@ -100,7 +102,7 @@ class PodSerializer : public Serializer<T> {
  */
 template <CustomSerializable T>
 class CustomFunctionSerializer : public Serializer<T> {
-   public:
+public:
     bool Serialize(const T& obj, FILE* file) override {
         bool result = detail_adl::AdlSerialize(obj, file);
         return result && (ferror(file) == 0);
@@ -119,7 +121,7 @@ class CustomFunctionSerializer : public Serializer<T> {
  */
 template <MethodSerializable T>
 class MethodSerializer : public Serializer<T> {
-   public:
+public:
     bool Serialize(const T& obj, FILE* file) override {
         return obj.Serialize(file);
     }
@@ -129,23 +131,22 @@ class MethodSerializer : public Serializer<T> {
     }
 };
 
-}  // namespace serialization::detail
-
-namespace serialization {
 /**
  * @brief Serializer factory
  *
  * Creates appropriate serializer based on type traits
  */
 template <typename T>
-std::unique_ptr<detail::Serializer<T>> CreateSerializer() {
+std::unique_ptr<Serializer<T>> CreateSerializer() {
     static_assert(FileSerializable<T>, "Type must be serializable to be used with this library");
     if constexpr (PodSerializable<T>) {
-        return std::make_unique<detail::PodSerializer<T>>();
+        return std::make_unique<PodSerializer<T>>();
     } else if constexpr (CustomSerializable<T>) {
-        return std::make_unique<detail::CustomFunctionSerializer<T>>();
+        return std::make_unique<CustomFunctionSerializer<T>>();
     } else if constexpr (MethodSerializable<T>) {
-        return std::make_unique<detail::MethodSerializer<T>>();
+        return std::make_unique<MethodSerializer<T>>();
+    } else if constexpr (SpecializedSerializable<T>) {
+        return std::make_unique<Serializer<T>>();
     } else {
         throw std::logic_error("No serializer found for type " + std::string(typeid(T).name()));
     }
@@ -207,5 +208,64 @@ inline bool Deserialize(std::vector<T>& obj, FILE* file) {
     }
     return true;
 }
+
+template <>
+class Serializer<std::string> {
+public:
+    using Specialized = std::true_type;
+    bool Serialize(const std::string& obj, FILE* file) {
+        uint64_t length = obj.length();
+        if (fwrite(&length, sizeof(uint64_t), 1, file) != 1) {
+            return false;
+        }
+        return fwrite(obj.data(), sizeof(char), length, file) == length;
+    }
+
+    bool Deserialize(std::string& obj, FILE* file) {
+        uint64_t length;
+        if (fread(&length, sizeof(uint64_t), 1, file) != 1) {
+            return false;
+        }
+        obj.resize(length);
+        return fread(&obj[0], sizeof(char), length, file) == length;
+    }
+};
+
+template <typename T>
+class Serializer<std::vector<T>> {
+public:
+    using Specialized = std::true_type;
+
+    bool Serialize(const std::vector<T>& obj, FILE* file) {
+        uint64_t size = obj.size();
+        if (fwrite(&size, sizeof(uint64_t), 1, file) != 1) {
+            return false;
+        }
+
+        auto item_serializer = CreateSerializer<T>();
+        for (const auto& item : obj) {
+            if (!item_serializer->Serialize(item, file)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool Deserialize(std::vector<T>& obj, FILE* file) {
+        uint64_t size;
+        if (fread(&size, sizeof(uint64_t), 1, file) != 1) {
+            return false;
+        }
+
+        obj.resize(size);
+        auto item_serializer = CreateSerializer<T>();
+        for (auto& item : obj) {
+            if (!item_serializer->Deserialize(item, file)) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
 
 }  // namespace serialization

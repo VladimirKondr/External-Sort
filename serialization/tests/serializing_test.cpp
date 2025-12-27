@@ -20,7 +20,6 @@ using serialization::CustomSerializable;
 using serialization::FileSerializable;
 using serialization::MethodSerializable;
 using serialization::PodSerializable;
-using serialization::detail::PodSerializer;
 
 /**
  * @brief Пространство имен для тестовых типов
