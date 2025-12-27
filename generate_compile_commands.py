@@ -31,8 +31,9 @@ class ProjectConfig:
         
         if self.include_mappings is None:
             self.include_mappings = {
-                "serialization": ["serialization/include"],
+                "serialization": ["serialization/include", "logging/include"],
                 "io": ["io/include"],
+                "logging": ["logging/include"],
                 "common": ["common/include"],
                 "external_sort": ["external_sort/include"],
             }
@@ -49,7 +50,7 @@ def find_cpp_files(project_root: Path, excluded_dirs: List[str]) -> List[Path]:
     return sorted(cpp_files)
 
 
-def find_gtest_include() -> Optional[str]:
+def find_bazel_external_lib(lib_patterns: List[str], subpath: str = "") -> Optional[str]:
     try:
         result = subprocess.run(
             ["bazel", "info", "output_base"],
@@ -60,11 +61,11 @@ def find_gtest_include() -> Optional[str]:
         output_base = Path(result.stdout.strip())
         external_dir = output_base / "external"
         
-        for gtest_pattern in ["googletest+", "googletest~*", "googletest"]:
-            for gtest_dir in external_dir.glob(gtest_pattern):
-                gtest_include = gtest_dir / "googletest" / "include"
-                if gtest_include.exists():
-                    return str(gtest_dir)
+        for pattern in lib_patterns:
+            for lib_dir in external_dir.glob(pattern):
+                check_path = lib_dir / subpath if subpath else lib_dir
+                if check_path.exists():
+                    return str(lib_dir)
         
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
@@ -72,10 +73,25 @@ def find_gtest_include() -> Optional[str]:
     return None
 
 
+def find_gtest_include() -> Optional[str]:
+    return find_bazel_external_lib(
+        ["googletest+", "googletest~*", "googletest"],
+        "googletest/include"
+    )
+
+
+def find_spdlog_include() -> Optional[str]:
+    return find_bazel_external_lib(
+        ["spdlog+", "spdlog~*", "spdlog"],
+        "include/spdlog"
+    )
+
+
 def get_include_paths(
     file_path: Path, 
     project_root: Path, 
     gtest_path: Optional[str],
+    spdlog_path: Optional[str],
     include_mappings: Dict[str, List[str]]
 ) -> List[str]:
     includes = [f"-I{project_root}"]
@@ -89,6 +105,9 @@ def get_include_paths(
         includes.append(f"-I{gtest_path}/googletest/include")
         includes.append(f"-I{gtest_path}/googlemock/include")
     
+    if spdlog_path:
+        includes.append(f"-I{spdlog_path}/include")
+    
     return includes
 
 
@@ -96,9 +115,10 @@ def create_compile_command(
     file_path: Path, 
     project_root: Path, 
     gtest_path: Optional[str],
+    spdlog_path: Optional[str],
     config: ProjectConfig
 ) -> Dict:
-    includes = get_include_paths(file_path, project_root, gtest_path, config.include_mappings)
+    includes = get_include_paths(file_path, project_root, gtest_path, spdlog_path, config.include_mappings)
     flags = [f"-std={config.cpp_standard}"] + config.common_flags
     
     arguments = [config.compiler, "-c"] + flags + includes + [str(file_path.resolve())]
@@ -120,9 +140,10 @@ def generate_compile_commands(
     project_root = Path.cwd()
     cpp_files = find_cpp_files(project_root, config.excluded_dirs)
     gtest_path = find_gtest_include()
+    spdlog_path = find_spdlog_include()
     
     compile_commands = [
-        create_compile_command(file, project_root, gtest_path, config)
+        create_compile_command(file, project_root, gtest_path, spdlog_path, config)
         for file in cpp_files
     ]
     
@@ -136,6 +157,9 @@ def generate_compile_commands(
     
     if gtest_path:
         print("Found Google Test includes")
+    
+    if spdlog_path:
+        print("Found spdlog includes")
     
     print(f"\nConfigured include mappings:")
     for dir_marker, includes in config.include_mappings.items():
