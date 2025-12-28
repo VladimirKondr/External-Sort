@@ -1,0 +1,80 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "element_buffer",
+    hdrs = [
+        "include/element_buffer.hpp",
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+)
+
+cc_library(
+    name = "io",
+    hdrs = [
+        "include/storage_types.hpp",
+        "include/interfaces.hpp",
+        "include/file_stream.hpp",
+        "include/memory_stream.hpp",
+        "include/temp_file_manager.hpp",
+        "include/io_logging.hpp"
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+    deps = [
+        ":element_buffer",
+        "//serialization",
+        "//logging"
+    ],
+)
+
+cc_test(
+    name = "element_buffer_test",
+    size = "small",
+    srcs = ["tests/element_buffer_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":element_buffer",
+        "//logging",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "file_stream_test",
+    size = "small",
+    srcs = ["tests/file_stream_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":io",
+        "//logging",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "temp_file_manager_test",
+    size = "small",
+    srcs = ["tests/temp_file_manager_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":io",
+        "//logging",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "memory_stream_test",
+    size = "small",
+    srcs = ["tests/memory_stream_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":io",
+        "//logging",
+        "@googletest//:gtest_main",
+    ],
+)
+
