@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../../logging/include/Registry.hpp"
+#include "Registry.hpp"
 #include <string>
 
 namespace serialization {

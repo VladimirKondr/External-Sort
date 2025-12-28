@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include "serialization_logging.hpp"
 #include "type_concepts.hpp"
 
 #include <cstdio>
@@ -40,34 +41,8 @@
 #include <string>
 #include <vector>
 
-// Include logging support
-#include "../../logging/include/Registry.hpp"
 
 namespace serialization {
-
-namespace detail {
-// Helper functions to safely log messages
-inline void LogError(const std::string& message) {
-    auto& logger = logging::detail::GetLoggerInstance();
-    if (logger) {
-        logger->LogError("[Serialization] " + message);
-    }
-}
-
-inline void LogWarning(const std::string& message) {
-    auto& logger = logging::detail::GetLoggerInstance();
-    if (logger) {
-        logger->LogWarning("[Serialization] " + message);
-    }
-}
-
-inline void LogInfo(const std::string& message) {
-    auto& logger = logging::detail::GetLoggerInstance();
-    if (logger) {
-        logger->LogInfo("[Serialization] " + message);
-    }
-}
-}  // namespace detail
 
 /**
  * @brief Base interface for serializable types

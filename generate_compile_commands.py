@@ -32,10 +32,10 @@ class ProjectConfig:
         if self.include_mappings is None:
             self.include_mappings = {
                 "serialization": ["serialization/include", "logging/include"],
-                "io": ["io/include"],
+                "io": ["io/include", "logging/include", "serialization/include"],
                 "logging": ["logging/include"],
                 "common": ["common/include"],
-                "external_sort": ["external_sort/include"],
+                "external_sort": ["external_sort/include", "logging/include"],
             }
 
 
