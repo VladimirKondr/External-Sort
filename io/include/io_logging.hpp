@@ -45,4 +45,4 @@ inline void LogInfo(const std::string& message) {
 }
 
 }  // namespace detail
-}  // namespace serialization
+}  // namespace io
