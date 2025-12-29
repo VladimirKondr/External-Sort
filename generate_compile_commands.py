@@ -35,7 +35,7 @@ class ProjectConfig:
                 "io": ["io/include", "logging/include", "serialization/include"],
                 "logging": ["logging/include"],
                 "common": ["common/include"],
-                "external_sort": ["external_sort/include", "logging/include"],
+                "external_sort": ["external_sort/include", "logging/include", "io/include", "serialization/include"],
             }
 
 

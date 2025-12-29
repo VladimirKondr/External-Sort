@@ -16,6 +16,17 @@ cc_library(
     ],
 )
 
+cc_binary(
+    name = "example",
+    srcs = ["examples/example.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":serialization",
+        "//logging",
+        "//logging:spdlog_wrapper",
+    ],
+)
+
 cc_test(
     name = "type_concepts_test",
     size = "small",
@@ -37,16 +48,5 @@ cc_test(
         ":serialization",
         "//logging",
         "@googletest//:gtest_main",
-    ],
-)
-
-cc_binary(
-    name = "example",
-    srcs = ["examples/example.cpp"],
-    copts = ["-std=c++20"],
-    deps = [
-        ":serialization",
-        "//logging",
-        "//logging:spdlog_wrapper",
     ],
 )

@@ -1,0 +1,109 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "external_sort",
+    hdrs = [
+        "include/external_sort_logging.hpp",
+        "include/k_way_merge_sorter.hpp",
+    ],
+    copts = ["-std=c++20"],
+    includes = ["include"],
+    deps = [
+        "//io",
+        "//logging",
+        "//serialization"
+    ],
+)
+
+cc_binary(
+    name = "example",
+    srcs = ["examples/example.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "//logging",
+        "//serialization",
+        "//logging:spdlog_wrapper",
+    ],
+)
+
+cc_test(
+    name = "complex_types_test",
+    srcs = ["tests/complex_types_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "//logging",
+        "//serialization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "string_sorting_test",
+    srcs = ["tests/string_sorting_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "//logging",
+        "//serialization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "basic_sorting_file_test",
+    srcs = ["tests/file/basic_sorting_file_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "//logging",
+        "//serialization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pod_types_file_test",
+    srcs = ["tests/file/pod_types_file_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "//logging",
+        "//serialization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "basic_sorting_memory_test",
+    srcs = ["tests/memory/basic_sorting_memory_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "//logging",
+        "//serialization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pod_types_memory_test",
+    srcs = ["tests/memory/pod_types_memory_test.cpp"],
+    copts = ["-std=c++20"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "//logging",
+        "//serialization",
+        "@googletest//:gtest_main",
+    ],
+)
