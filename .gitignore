@@ -58,5 +58,7 @@ latex
 
 .vscode
 compile_commands.json
+docs/
+coverage_report/
 
 # End of https://www.toptal.com/developers/gitignore/api/bazel,doxygen,c++
