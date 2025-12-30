@@ -1,0 +1,395 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - _coverage_report.dat - external_sort/include/external_sort/include/k_way_merge_sorter.hpp</title>
+  <link rel="stylesheet" type="text/css" href="../../../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../../../index.html">top level</a> - <a href="index.html">external_sort/include/external_sort/include</a> - k_way_merge_sorter.hpp<span style="font-size: 80%;"> (source / <a href="k_way_merge_sorter.hpp.func-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">_coverage_report.dat</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">91.0&nbsp;%</td>
+            <td class="headerCovTableEntry">133</td>
+            <td class="headerCovTableEntry">121</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2025-12-30 17:06:08</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">96.2&nbsp;%</td>
+            <td class="headerCovTableEntry">78</td>
+            <td class="headerCovTableEntry">75</td>
+          </tr>
+                  <tr><td><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : /**</span>
+<span id="L2"><span class="lineNum">       2</span>              :  * @file k_way_merge_sorter.hpp</span>
+<span id="L3"><span class="lineNum">       3</span>              :  * @brief K-way external merge sort</span>
+<span id="L4"><span class="lineNum">       4</span>              :  */</span>
+<span id="L5"><span class="lineNum">       5</span>              : </span>
+<span id="L6"><span class="lineNum">       6</span>              : #pragma once</span>
+<span id="L7"><span class="lineNum">       7</span>              : </span>
+<span id="L8"><span class="lineNum">       8</span>              : #include &quot;external_sort_logging.hpp&quot;</span>
+<span id="L9"><span class="lineNum">       9</span>              : #include &quot;interfaces.hpp&quot;</span>
+<span id="L10"><span class="lineNum">      10</span>              : #include &quot;storage_types.hpp&quot;</span>
+<span id="L11"><span class="lineNum">      11</span>              : </span>
+<span id="L12"><span class="lineNum">      12</span>              : #include &lt;algorithm&gt;</span>
+<span id="L13"><span class="lineNum">      13</span>              : #include &lt;queue&gt;</span>
+<span id="L14"><span class="lineNum">      14</span>              : #include &lt;vector&gt;</span>
+<span id="L15"><span class="lineNum">      15</span>              : </span>
+<span id="L16"><span class="lineNum">      16</span>              : namespace external_sort {</span>
+<span id="L17"><span class="lineNum">      17</span>              : </span>
+<span id="L18"><span class="lineNum">      18</span>              : /**</span>
+<span id="L19"><span class="lineNum">      19</span>              :  * @brief Structure representing a data source for merging</span>
+<span id="L20"><span class="lineNum">      20</span>              :  *</span>
+<span id="L21"><span class="lineNum">      21</span>              :  * Used in priority queue for k-way merging.</span>
+<span id="L22"><span class="lineNum">      22</span>              :  *</span>
+<span id="L23"><span class="lineNum">      23</span>              :  * @tparam T Type of data elements</span>
+<span id="L24"><span class="lineNum">      24</span>              :  */</span>
+<span id="L25"><span class="lineNum">      25</span>              : template &lt;typename T&gt;</span>
+<span id="L26"><span class="lineNum">      26</span>              : struct MergeSource {</span>
+<span id="L27"><span class="lineNum">      27</span>              :     io::IInputStream&lt;T&gt;* stream;  ///&lt; Pointer to source stream</span>
+<span id="L28"><span class="lineNum">      28</span>              : };</span>
+<span id="L29"><span class="lineNum">      29</span>              : </span>
+<span id="L30"><span class="lineNum">      30</span>              : /**</span>
+<span id="L31"><span class="lineNum">      31</span>              :  * @brief Comparator for merge sources that compares the current value of the streams</span>
+<span id="L32"><span class="lineNum">      32</span>              :  */</span>
+<span id="L33"><span class="lineNum">      33</span>              : template &lt;typename T&gt;</span>
+<span id="L34"><span class="lineNum">      34</span>              : struct MergeSourceComparatorStatic {</span>
+<span id="L35"><span class="lineNum">      35</span>              :     bool ascending;</span>
+<span id="L36"><span class="lineNum">      36</span>              :     explicit MergeSourceComparatorStatic(bool asc) : ascending(asc) {}</span>
+<span id="L37"><span class="lineNum">      37</span>              : </span>
+<span id="L38"><span class="lineNum">      38</span>              :     bool operator()(const MergeSource&lt;T&gt;&amp; a, const MergeSource&lt;T&gt;&amp; b) const {</span>
+<span id="L39"><span class="lineNum">      39</span>              :         const T&amp; va = a.stream-&gt;Value();</span>
+<span id="L40"><span class="lineNum">      40</span>              :         const T&amp; vb = b.stream-&gt;Value();</span>
+<span id="L41"><span class="lineNum">      41</span>              :         return ascending ? (va &gt; vb) : (va &lt; vb);</span>
+<span id="L42"><span class="lineNum">      42</span>              :     }</span>
+<span id="L43"><span class="lineNum">      43</span>              : };</span>
+<span id="L44"><span class="lineNum">      44</span>              : </span>
+<span id="L45"><span class="lineNum">      45</span>              : /**</span>
+<span id="L46"><span class="lineNum">      46</span>              :  * @brief Template class for performing k-way external merge sort</span>
+<span id="L47"><span class="lineNum">      47</span>              :  *</span>
+<span id="L48"><span class="lineNum">      48</span>              :  * The class is abstracted from specific storage implementation and works</span>
+<span id="L49"><span class="lineNum">      49</span>              :  * through IStreamFactory, io::IInputStream and io::IOutputStream interfaces.</span>
+<span id="L50"><span class="lineNum">      50</span>              :  *</span>
+<span id="L51"><span class="lineNum">      51</span>              :  * @tparam T Type of elements to sort</span>
+<span id="L52"><span class="lineNum">      52</span>              :  */</span>
+<span id="L53"><span class="lineNum">      53</span>              : template &lt;typename T&gt;</span>
+<span id="L54"><span class="lineNum">      54</span>              : class KWayMergeSorter {</span>
+<span id="L55"><span class="lineNum">      55</span>              : private:</span>
+<span id="L56"><span class="lineNum">      56</span>              :     io::IStreamFactory&lt;T&gt;&amp; stream_factory_;  ///&lt; Reference to stream factory</span>
+<span id="L57"><span class="lineNum">      57</span>              :     io::StorageId input_id_;                 ///&lt; Input storage identifier</span>
+<span id="L58"><span class="lineNum">      58</span>              :     io::StorageId output_id_;                ///&lt; Output storage identifier</span>
+<span id="L59"><span class="lineNum">      59</span>              :     uint64_t memory_for_runs_bytes_;         ///&lt; Memory for creating initial runs (bytes)</span>
+<span id="L60"><span class="lineNum">      60</span>              :     uint64_t k_way_degree_;                  ///&lt; Degree of k-way merging</span>
+<span id="L61"><span class="lineNum">      61</span>              :     uint64_t file_io_buffer_elements_;       ///&lt; Size of I/O buffer in elements</span>
+<span id="L62"><span class="lineNum">      62</span>              :     bool ascending_;                         ///&lt; Ascending sort flag</span>
+<span id="L63"><span class="lineNum">      63</span>              : </span>
+<span id="L64"><span class="lineNum">      64</span>              :     /**</span>
+<span id="L65"><span class="lineNum">      65</span>              :      * @brief Comparator for merge sources</span>
+<span id="L66"><span class="lineNum">      66</span>              :      */</span>
+<span id="L67"><span class="lineNum">      67</span>              :     struct MergeSourceComparator {</span>
+<span id="L68"><span class="lineNum">      68</span>              :         bool ascending;  ///&lt; Sort direction flag</span>
+<span id="L69"><span class="lineNum">      69</span>              : </span>
+<span id="L70"><span class="lineNum">      70</span>              :         /**</span>
+<span id="L71"><span class="lineNum">      71</span>              :          * @brief Comparator constructor</span>
+<span id="L72"><span class="lineNum">      72</span>              :          * @param asc Sort direction (true - ascending)</span>
+<span id="L73"><span class="lineNum">      73</span>              :          */</span>
+<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC tlaBgGNC">          62 :         explicit MergeSourceComparator(bool asc) : ascending(asc) {</span></span>
+<span id="L75"><span class="lineNum">      75</span> <span class="tlaGNC">          62 :         }</span></span>
+<span id="L76"><span class="lineNum">      76</span>              : </span>
+<span id="L77"><span class="lineNum">      77</span>              :         /**</span>
+<span id="L78"><span class="lineNum">      78</span>              :          * @brief Comparison operator</span>
+<span id="L79"><span class="lineNum">      79</span>              :          * @param a First source</span>
+<span id="L80"><span class="lineNum">      80</span>              :          * @param b Second source</span>
+<span id="L81"><span class="lineNum">      81</span>              :          * @return Comparison result for priority queue</span>
+<span id="L82"><span class="lineNum">      82</span>              :          */</span>
+<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">       13899 :         bool operator()(const MergeSource&lt;T&gt;&amp; a, const MergeSource&lt;T&gt;&amp; b) const {</span></span>
+<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">       13899 :             const T&amp; va = a.stream-&gt;Value();</span></span>
+<span id="L85"><span class="lineNum">      85</span> <span class="tlaGNC">       13899 :             const T&amp; vb = b.stream-&gt;Value();</span></span>
+<span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">       13899 :             return ascending ? (va &gt; vb) : (va &lt; vb);</span></span>
+<span id="L87"><span class="lineNum">      87</span>              :         }</span>
+<span id="L88"><span class="lineNum">      88</span>              :     };</span>
+<span id="L89"><span class="lineNum">      89</span>              : </span>
+<span id="L90"><span class="lineNum">      90</span>              :     /**</span>
+<span id="L91"><span class="lineNum">      91</span>              :      * @brief Creates initial sorted runs from input stream</span>
+<span id="L92"><span class="lineNum">      92</span>              :      * @return Vector of created run identifiers</span>
+<span id="L93"><span class="lineNum">      93</span>              :      */</span>
+<span id="L94"><span class="lineNum">      94</span>              :     std::vector&lt;io::StorageId&gt; CreateInitialRuns();</span>
+<span id="L95"><span class="lineNum">      95</span>              : </span>
+<span id="L96"><span class="lineNum">      96</span>              :     /**</span>
+<span id="L97"><span class="lineNum">      97</span>              :      * @brief Merges a group of runs into one</span>
+<span id="L98"><span class="lineNum">      98</span>              :      * @param group_run_ids Identifiers of runs to merge</span>
+<span id="L99"><span class="lineNum">      99</span>              :      * @param output_run_id Output run identifier</span>
+<span id="L100"><span class="lineNum">     100</span>              :      */</span>
+<span id="L101"><span class="lineNum">     101</span>              :     void MergeGroupOfRuns(const std::vector&lt;io::StorageId&gt;&amp; group_run_ids,</span>
+<span id="L102"><span class="lineNum">     102</span>              :                           const io::StorageId&amp; output_run_id);</span>
+<span id="L103"><span class="lineNum">     103</span>              : </span>
+<span id="L104"><span class="lineNum">     104</span>              : public:</span>
+<span id="L105"><span class="lineNum">     105</span>              :     /**</span>
+<span id="L106"><span class="lineNum">     106</span>              :      * @brief Constructor for k-way merge sorter</span>
+<span id="L107"><span class="lineNum">     107</span>              :      * @param factory Reference to stream factory</span>
+<span id="L108"><span class="lineNum">     108</span>              :      * @param input_id Input storage identifier</span>
+<span id="L109"><span class="lineNum">     109</span>              :      * @param output_id Output storage identifier</span>
+<span id="L110"><span class="lineNum">     110</span>              :      * @param mem_bytes Memory for creating runs in bytes</span>
+<span id="L111"><span class="lineNum">     111</span>              :      * @param k_degree Degree of k-way merging (minimum 2)</span>
+<span id="L112"><span class="lineNum">     112</span>              :      * @param io_buf_elems Size of I/O buffer in elements</span>
+<span id="L113"><span class="lineNum">     113</span>              :      * @param sort_ascending Sort direction (default ascending)</span>
+<span id="L114"><span class="lineNum">     114</span>              :      * @throws std::invalid_argument if k_degree &lt; 2</span>
+<span id="L115"><span class="lineNum">     115</span>              :      * @throws std::runtime_error if output_id is in temporary storage context</span>
+<span id="L116"><span class="lineNum">     116</span>              :      */</span>
+<span id="L117"><span class="lineNum">     117</span>              :     KWayMergeSorter(io::IStreamFactory&lt;T&gt;&amp; factory, io::StorageId input_id, io::StorageId output_id,</span>
+<span id="L118"><span class="lineNum">     118</span>              :                     uint64_t mem_bytes, uint64_t k_degree, uint64_t io_buf_elems,</span>
+<span id="L119"><span class="lineNum">     119</span>              :                     bool sort_ascending = true);</span>
+<span id="L120"><span class="lineNum">     120</span>              : </span>
+<span id="L121"><span class="lineNum">     121</span>              :     /**</span>
+<span id="L122"><span class="lineNum">     122</span>              :      * @brief Performs sorting</span>
+<span id="L123"><span class="lineNum">     123</span>              :      *</span>
+<span id="L124"><span class="lineNum">     124</span>              :      * Main method that performs complete k-way external sorting:</span>
+<span id="L125"><span class="lineNum">     125</span>              :      * 1. Creates initial sorted runs</span>
+<span id="L126"><span class="lineNum">     126</span>              :      * 2. Repeatedly merges runs until one remains</span>
+<span id="L127"><span class="lineNum">     127</span>              :      * 3. Makes final run permanent with output_id name</span>
+<span id="L128"><span class="lineNum">     128</span>              :      */</span>
+<span id="L129"><span class="lineNum">     129</span>              :     void Sort();</span>
+<span id="L130"><span class="lineNum">     130</span>              : };</span>
+<span id="L131"><span class="lineNum">     131</span>              : </span>
+<span id="L132"><span class="lineNum">     132</span>              : /**</span>
+<span id="L133"><span class="lineNum">     133</span>              :  * @note Performance tip: When sorting non-trivial or move-only types prefer</span>
+<span id="L134"><span class="lineNum">     134</span>              :  * using stream implementations that support TakeValue() and rvalue Write(T&amp;&amp;).</span>
+<span id="L135"><span class="lineNum">     135</span>              :  * The sorter uses these methods internally (when available) to minimize copies</span>
+<span id="L136"><span class="lineNum">     136</span>              :  * by moving elements between streams and temporary buffers.</span>
+<span id="L137"><span class="lineNum">     137</span>              :  */</span>
+<span id="L138"><span class="lineNum">     138</span>              : </span>
+<span id="L139"><span class="lineNum">     139</span>              : template &lt;typename T&gt;</span>
+<span id="L140"><span class="lineNum">     140</span> <span class="tlaGNC">          40 : std::vector&lt;io::StorageId&gt; KWayMergeSorter&lt;T&gt;::CreateInitialRuns() {</span></span>
+<span id="L141"><span class="lineNum">     141</span> <span class="tlaGNC">          40 :     std::unique_ptr&lt;io::IInputStream&lt;T&gt;&gt; input_stream =</span></span>
+<span id="L142"><span class="lineNum">     142</span> <span class="tlaGNC">          40 :         stream_factory_.CreateInputStream(input_id_, file_io_buffer_elements_);</span></span>
+<span id="L143"><span class="lineNum">     143</span>              : </span>
+<span id="L144"><span class="lineNum">     144</span> <span class="tlaGNC">          40 :     if (input_stream-&gt;IsEmptyOriginalStorage()) {</span></span>
+<span id="L145"><span class="lineNum">     145</span> <span class="tlaGNC">           2 :         detail::LogInfo(&quot;KWayMergeSorter: Input storage &quot; + input_id_ + &quot; is empty. No runs.&quot;);</span></span>
+<span id="L146"><span class="lineNum">     146</span> <span class="tlaGNC">           2 :         return {};</span></span>
+<span id="L147"><span class="lineNum">     147</span>              :     }</span>
+<span id="L148"><span class="lineNum">     148</span>              : </span>
+<span id="L149"><span class="lineNum">     149</span> <span class="tlaGNC">          38 :     std::vector&lt;io::StorageId&gt; run_ids;</span></span>
+<span id="L150"><span class="lineNum">     150</span> <span class="tlaGNC">          38 :     std::vector&lt;T&gt; run_buffer_std_vec;</span></span>
+<span id="L151"><span class="lineNum">     151</span> <span class="tlaGNC">          38 :     const uint64_t elements_per_run = memory_for_runs_bytes_ / sizeof(T);</span></span>
+<span id="L152"><span class="lineNum">     152</span> <span class="tlaGNC">          38 :     if (elements_per_run == 0) {</span></span>
+<span id="L153"><span class="lineNum">     153</span> <span class="tlaGNC">           1 :         throw std::runtime_error(&quot;KWayMergeSorter: Memory limit too small.&quot;);</span></span>
+<span id="L154"><span class="lineNum">     154</span>              :     }</span>
+<span id="L155"><span class="lineNum">     155</span> <span class="tlaGNC">          37 :     run_buffer_std_vec.reserve(elements_per_run);</span></span>
+<span id="L156"><span class="lineNum">     156</span>              : </span>
+<span id="L157"><span class="lineNum">     157</span> <span class="tlaGNC">         246 :     while (!input_stream-&gt;IsExhausted()) {</span></span>
+<span id="L158"><span class="lineNum">     158</span> <span class="tlaGNC">         172 :         run_buffer_std_vec.clear();</span></span>
+<span id="L159"><span class="lineNum">     159</span> <span class="tlaGNC">        2174 :         while (run_buffer_std_vec.size() &lt; elements_per_run &amp;&amp; !input_stream-&gt;IsExhausted()) {</span></span>
+<span id="L160"><span class="lineNum">     160</span> <span class="tlaGNC">        2002 :             run_buffer_std_vec.push_back(input_stream-&gt;TakeValue());</span></span>
+<span id="L161"><span class="lineNum">     161</span> <span class="tlaGNC">        2002 :             input_stream-&gt;Advance();</span></span>
+<span id="L162"><span class="lineNum">     162</span>              :         }</span>
+<span id="L163"><span class="lineNum">     163</span>              : </span>
+<span id="L164"><span class="lineNum">     164</span> <span class="tlaGNC">         172 :         if (!run_buffer_std_vec.empty()) {</span></span>
+<span id="L165"><span class="lineNum">     165</span> <span class="tlaGNC">         172 :             if (ascending_) {</span></span>
+<span id="L166"><span class="lineNum">     166</span> <span class="tlaGNC">         163 :                 std::sort(run_buffer_std_vec.begin(), run_buffer_std_vec.end());</span></span>
+<span id="L167"><span class="lineNum">     167</span>              :             } else {</span>
+<span id="L168"><span class="lineNum">     168</span> <span class="tlaGNC">           9 :                 std::sort(run_buffer_std_vec.begin(), run_buffer_std_vec.end(), std::greater&lt;T&gt;());</span></span>
+<span id="L169"><span class="lineNum">     169</span>              :             }</span>
+<span id="L170"><span class="lineNum">     170</span>              : </span>
+<span id="L171"><span class="lineNum">     171</span> <span class="tlaGNC">         172 :             io::StorageId run_id;</span></span>
+<span id="L172"><span class="lineNum">     172</span> <span class="tlaGNC">         172 :             std::unique_ptr&lt;io::IOutputStream&lt;T&gt;&gt; out_run =</span></span>
+<span id="L173"><span class="lineNum">     173</span> <span class="tlaGNC">         172 :                 stream_factory_.CreateTempOutputStream(run_id, file_io_buffer_elements_);</span></span>
+<span id="L174"><span class="lineNum">     174</span> <span class="tlaGNC">        2174 :             for (T&amp; val : run_buffer_std_vec) {</span></span>
+<span id="L175"><span class="lineNum">     175</span> <span class="tlaGNC">        2002 :                 out_run-&gt;Write(std::move(val));</span></span>
+<span id="L176"><span class="lineNum">     176</span>              :             }</span>
+<span id="L177"><span class="lineNum">     177</span> <span class="tlaGNC">         172 :             out_run-&gt;Finalize();</span></span>
+<span id="L178"><span class="lineNum">     178</span> <span class="tlaGNC">         172 :             run_ids.push_back(std::move(run_id));</span></span>
+<span id="L179"><span class="lineNum">     179</span> <span class="tlaGNC">         516 :             detail::LogInfo(&quot;KWayMergeSorter: Created initial run &quot; + run_id + &quot; with &quot; +</span></span>
+<span id="L180"><span class="lineNum">     180</span> <span class="tlaGNC">         688 :                             std::to_string(out_run-&gt;GetTotalElementsWritten()) + &quot; elements.&quot;);</span></span>
+<span id="L181"><span class="lineNum">     181</span> <span class="tlaGNC">         172 :         }</span></span>
+<span id="L182"><span class="lineNum">     182</span>              :     }</span>
+<span id="L183"><span class="lineNum">     183</span> <span class="tlaGNC">          37 :     return run_ids;</span></span>
+<span id="L184"><span class="lineNum">     184</span> <span class="tlaGNC">          42 : }</span></span>
+<span id="L185"><span class="lineNum">     185</span>              : </span>
+<span id="L186"><span class="lineNum">     186</span>              : template &lt;typename T&gt;</span>
+<span id="L187"><span class="lineNum">     187</span> <span class="tlaGNC">          62 : void KWayMergeSorter&lt;T&gt;::MergeGroupOfRuns(const std::vector&lt;io::StorageId&gt;&amp; group_run_ids,</span></span>
+<span id="L188"><span class="lineNum">     188</span>              :                                           const io::StorageId&amp; output_run_id) {</span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC">         186 :     detail::LogInfo(&quot;KWayMergeSorter: Merging &quot; + std::to_string(group_run_ids.size()) +</span></span>
+<span id="L190"><span class="lineNum">     190</span> <span class="tlaGNC">         124 :                     &quot; runs into &quot; + output_run_id);</span></span>
+<span id="L191"><span class="lineNum">     191</span>              : </span>
+<span id="L192"><span class="lineNum">     192</span> <span class="tlaGNC">          62 :     std::priority_queue&lt;MergeSource&lt;T&gt;, std::vector&lt;MergeSource&lt;T&gt;&gt;, MergeSourceComparator&gt; pq{</span></span>
+<span id="L193"><span class="lineNum">     193</span> <span class="tlaGNC">          62 :         MergeSourceComparator(ascending_)};</span></span>
+<span id="L194"><span class="lineNum">     194</span> <span class="tlaGNC">          62 :     std::vector&lt;std::unique_ptr&lt;io::IInputStream&lt;T&gt;&gt;&gt; input_streams_store;</span></span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">          62 :     input_streams_store.reserve(group_run_ids.size());</span></span>
+<span id="L196"><span class="lineNum">     196</span>              : </span>
+<span id="L197"><span class="lineNum">     197</span> <span class="tlaGNC">         259 :     for (const auto&amp; run_id : group_run_ids) {</span></span>
+<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">         197 :         auto stream_ptr = stream_factory_.CreateInputStream(run_id, file_io_buffer_elements_);</span></span>
+<span id="L199"><span class="lineNum">     199</span> <span class="tlaGNC">         197 :         if (!stream_ptr-&gt;IsExhausted()) {</span></span>
+<span id="L200"><span class="lineNum">     200</span> <span class="tlaGNC">         197 :             pq.push({stream_ptr.get()});</span></span>
+<span id="L201"><span class="lineNum">     201</span>              :         }</span>
+<span id="L202"><span class="lineNum">     202</span> <span class="tlaGNC">         197 :         input_streams_store.push_back(std::move(stream_ptr));</span></span>
+<span id="L203"><span class="lineNum">     203</span>              :     }</span>
+<span id="L204"><span class="lineNum">     204</span>              : </span>
+<span id="L205"><span class="lineNum">     205</span> <span class="tlaGNC">          62 :     std::unique_ptr&lt;io::IOutputStream&lt;T&gt;&gt; output_stream =</span></span>
+<span id="L206"><span class="lineNum">     206</span> <span class="tlaGNC">          62 :         stream_factory_.CreateOutputStream(output_run_id, file_io_buffer_elements_);</span></span>
+<span id="L207"><span class="lineNum">     207</span>              : </span>
+<span id="L208"><span class="lineNum">     208</span> <span class="tlaGNC">        4361 :     while (!pq.empty()) {</span></span>
+<span id="L209"><span class="lineNum">     209</span> <span class="tlaGNC">        4280 :         MergeSource&lt;T&gt; current_source = pq.top();</span></span>
+<span id="L210"><span class="lineNum">     210</span> <span class="tlaGNC">        4280 :         pq.pop();</span></span>
+<span id="L211"><span class="lineNum">     211</span> <span class="tlaGNC">        4280 :         T val = current_source.stream-&gt;TakeValue();</span></span>
+<span id="L212"><span class="lineNum">     212</span> <span class="tlaGNC">        4280 :         output_stream-&gt;Write(std::move(val));</span></span>
+<span id="L213"><span class="lineNum">     213</span> <span class="tlaGNC">        4280 :         current_source.stream-&gt;Advance();</span></span>
+<span id="L214"><span class="lineNum">     214</span> <span class="tlaGNC">        4280 :         if (!current_source.stream-&gt;IsExhausted()) {</span></span>
+<span id="L215"><span class="lineNum">     215</span> <span class="tlaGNC">        4083 :             pq.push({current_source.stream});</span></span>
+<span id="L216"><span class="lineNum">     216</span>              :         }</span>
+<span id="L217"><span class="lineNum">     217</span>              :     }</span>
+<span id="L218"><span class="lineNum">     218</span> <span class="tlaGNC">          62 :     output_stream-&gt;Finalize();</span></span>
+<span id="L219"><span class="lineNum">     219</span> <span class="tlaGNC">         186 :     detail::LogInfo(&quot;KWayMergeSorter: Merged group into &quot; + output_run_id + &quot; with &quot; +</span></span>
+<span id="L220"><span class="lineNum">     220</span> <span class="tlaGNC">         248 :                     std::to_string(output_stream-&gt;GetTotalElementsWritten()) + &quot; elements.&quot;);</span></span>
+<span id="L221"><span class="lineNum">     221</span> <span class="tlaGNC">          62 : }</span></span>
+<span id="L222"><span class="lineNum">     222</span>              : </span>
+<span id="L223"><span class="lineNum">     223</span>              : template &lt;typename T&gt;</span>
+<span id="L224"><span class="lineNum">     224</span> <span class="tlaGNC">          42 : KWayMergeSorter&lt;T&gt;::KWayMergeSorter(io::IStreamFactory&lt;T&gt;&amp; factory, io::StorageId input_id,</span></span>
+<span id="L225"><span class="lineNum">     225</span>              :                                     io::StorageId output_id, uint64_t mem_bytes, uint64_t k_degree,</span>
+<span id="L226"><span class="lineNum">     226</span>              :                                     uint64_t io_buf_elems, bool sort_ascending)</span>
+<span id="L227"><span class="lineNum">     227</span> <span class="tlaGNC">          42 :     : stream_factory_(factory),</span></span>
+<span id="L228"><span class="lineNum">     228</span> <span class="tlaGNC">          42 :       input_id_(std::move(input_id)),</span></span>
+<span id="L229"><span class="lineNum">     229</span> <span class="tlaGNC">          42 :       output_id_(std::move(output_id)),</span></span>
+<span id="L230"><span class="lineNum">     230</span> <span class="tlaGNC">          42 :       memory_for_runs_bytes_(mem_bytes),</span></span>
+<span id="L231"><span class="lineNum">     231</span> <span class="tlaGNC">          42 :       k_way_degree_(k_degree),</span></span>
+<span id="L232"><span class="lineNum">     232</span> <span class="tlaGNC">          42 :       file_io_buffer_elements_(io_buf_elems),</span></span>
+<span id="L233"><span class="lineNum">     233</span> <span class="tlaGNC">          42 :       ascending_(sort_ascending) {</span></span>
+<span id="L234"><span class="lineNum">     234</span> <span class="tlaGNC">          42 :     if (k_way_degree_ &lt; 2) {</span></span>
+<span id="L235"><span class="lineNum">     235</span> <span class="tlaGNC">           2 :         throw std::invalid_argument(&quot;KWayMergeSorter: k_way_degree must be at least 2.&quot;);</span></span>
+<span id="L236"><span class="lineNum">     236</span>              :     }</span>
+<span id="L237"><span class="lineNum">     237</span> <span class="tlaGNC">          40 :     io::StorageId temp_context_id = stream_factory_.GetTempStorageContextId();</span></span>
+<span id="L238"><span class="lineNum">     238</span> <span class="tlaGNC">          40 :     if (!temp_context_id.empty() &amp;&amp; output_id_.rfind(temp_context_id, 0) == 0 &amp;&amp;</span></span>
+<span id="L239"><span class="lineNum">     239</span> <span class="tlaUNC tlaBgUNC">           0 :         output_id_.length() &gt; temp_context_id.length()) {</span></span>
+<span id="L240"><span class="lineNum">     240</span> <span class="tlaUNC">           0 :         throw std::runtime_error(&quot;KWayMergeSorter: Output storage ID '&quot; + output_id_ +</span></span>
+<span id="L241"><span class="lineNum">     241</span> <span class="tlaUNC">           0 :                                  &quot;' seems to be inside the temporary storage context '&quot; +</span></span>
+<span id="L242"><span class="lineNum">     242</span> <span class="tlaUNC">           0 :                                  temp_context_id + &quot;'.&quot;);</span></span>
+<span id="L243"><span class="lineNum">     243</span>              :     }</span>
+<span id="L244"><span class="lineNum">     244</span> <span class="tlaGNC tlaBgGNC">          44 : }</span></span>
+<span id="L245"><span class="lineNum">     245</span>              : </span>
+<span id="L246"><span class="lineNum">     246</span>              : template &lt;typename T&gt;</span>
+<span id="L247"><span class="lineNum">     247</span> <span class="tlaGNC">          40 : void KWayMergeSorter&lt;T&gt;::Sort() {</span></span>
+<span id="L248"><span class="lineNum">     248</span> <span class="tlaGNC">          40 :     std::vector&lt;io::StorageId&gt; current_run_ids = CreateInitialRuns();</span></span>
+<span id="L249"><span class="lineNum">     249</span>              : </span>
+<span id="L250"><span class="lineNum">     250</span> <span class="tlaGNC">          39 :     if (current_run_ids.empty()) {</span></span>
+<span id="L251"><span class="lineNum">     251</span> <span class="tlaGNC">           2 :         detail::LogInfo(&quot;KWayMergeSorter: No initial runs. Creating empty output &quot; + output_id_);</span></span>
+<span id="L252"><span class="lineNum">     252</span> <span class="tlaGNC">           2 :         auto empty_out = stream_factory_.CreateOutputStream(output_id_, file_io_buffer_elements_);</span></span>
+<span id="L253"><span class="lineNum">     253</span> <span class="tlaGNC">           2 :         empty_out-&gt;Finalize();</span></span>
+<span id="L254"><span class="lineNum">     254</span> <span class="tlaGNC">           2 :         return;</span></span>
+<span id="L255"><span class="lineNum">     255</span> <span class="tlaGNC">           2 :     }</span></span>
+<span id="L256"><span class="lineNum">     256</span>              : </span>
+<span id="L257"><span class="lineNum">     257</span> <span class="tlaGNC">          37 :     std::vector&lt;io::StorageId&gt; runs_to_delete_this_pass;</span></span>
+<span id="L258"><span class="lineNum">     258</span> <span class="tlaGNC">         117 :     while (current_run_ids.size() &gt; 1) {</span></span>
+<span id="L259"><span class="lineNum">     259</span> <span class="tlaGNC">          40 :         std::vector&lt;io::StorageId&gt; next_pass_run_ids;</span></span>
+<span id="L260"><span class="lineNum">     260</span> <span class="tlaGNC">          40 :         runs_to_delete_this_pass.clear();</span></span>
+<span id="L261"><span class="lineNum">     261</span> <span class="tlaGNC">         120 :         detail::LogInfo(&quot;KWayMergeSorter: Merge pass with &quot; +</span></span>
+<span id="L262"><span class="lineNum">     262</span> <span class="tlaGNC">         160 :                         std::to_string(current_run_ids.size()) + &quot; runs.&quot;);</span></span>
+<span id="L263"><span class="lineNum">     263</span>              : </span>
+<span id="L264"><span class="lineNum">     264</span> <span class="tlaGNC">         164 :         for (uint64_t i = 0; i &lt; current_run_ids.size(); i += k_way_degree_) {</span></span>
+<span id="L265"><span class="lineNum">     265</span> <span class="tlaGNC">          62 :             std::vector&lt;io::StorageId&gt; group_to_merge;</span></span>
+<span id="L266"><span class="lineNum">     266</span> <span class="tlaGNC">         259 :             for (uint64_t j = 0; j &lt; k_way_degree_ &amp;&amp; (i + j) &lt; current_run_ids.size(); ++j) {</span></span>
+<span id="L267"><span class="lineNum">     267</span> <span class="tlaGNC">         197 :                 group_to_merge.push_back(current_run_ids[i + j]);</span></span>
+<span id="L268"><span class="lineNum">     268</span>              :             }</span>
+<span id="L269"><span class="lineNum">     269</span> <span class="tlaGNC">          62 :             if (group_to_merge.empty()) {</span></span>
+<span id="L270"><span class="lineNum">     270</span> <span class="tlaUNC tlaBgUNC">           0 :                 continue;</span></span>
+<span id="L271"><span class="lineNum">     271</span>              :             }</span>
+<span id="L272"><span class="lineNum">     272</span>              : </span>
+<span id="L273"><span class="lineNum">     273</span> <span class="tlaGNC tlaBgGNC">          62 :             io::StorageId merged_run_id;</span></span>
+<span id="L274"><span class="lineNum">     274</span> <span class="tlaGNC">          62 :             bool is_final_merge_to_output = (current_run_ids.size() &lt;= k_way_degree_) &amp;&amp; (i == 0);</span></span>
+<span id="L275"><span class="lineNum">     275</span>              : </span>
+<span id="L276"><span class="lineNum">     276</span> <span class="tlaGNC">          62 :             if (is_final_merge_to_output) {</span></span>
+<span id="L277"><span class="lineNum">     277</span> <span class="tlaGNC">          31 :                 merged_run_id = output_id_;</span></span>
+<span id="L278"><span class="lineNum">     278</span> <span class="tlaGNC">          31 :                 detail::LogInfo(&quot;KWayMergeSorter: Merging to final output: &quot; + output_id_);</span></span>
+<span id="L279"><span class="lineNum">     279</span>              :             } else {</span>
+<span id="L280"><span class="lineNum">     280</span> <span class="tlaGNC">          31 :                 auto temp_stream =</span></span>
+<span id="L281"><span class="lineNum">     281</span> <span class="tlaGNC">          31 :                     stream_factory_.CreateTempOutputStream(merged_run_id, file_io_buffer_elements_);</span></span>
+<span id="L282"><span class="lineNum">     282</span> <span class="tlaGNC">          31 :                 temp_stream-&gt;Finalize();</span></span>
+<span id="L283"><span class="lineNum">     283</span> <span class="tlaGNC">          31 :             }</span></span>
+<span id="L284"><span class="lineNum">     284</span>              : </span>
+<span id="L285"><span class="lineNum">     285</span> <span class="tlaGNC">          62 :             MergeGroupOfRuns(group_to_merge, merged_run_id);</span></span>
+<span id="L286"><span class="lineNum">     286</span> <span class="tlaGNC">          62 :             next_pass_run_ids.push_back(std::move(merged_run_id));</span></span>
+<span id="L287"><span class="lineNum">     287</span>              : </span>
+<span id="L288"><span class="lineNum">     288</span> <span class="tlaGNC">         259 :             for (const auto&amp; id_to_del : group_to_merge) {</span></span>
+<span id="L289"><span class="lineNum">     289</span> <span class="tlaGNC">         197 :                 runs_to_delete_this_pass.push_back(id_to_del);</span></span>
+<span id="L290"><span class="lineNum">     290</span>              :             }</span>
+<span id="L291"><span class="lineNum">     291</span>              :         }</span>
+<span id="L292"><span class="lineNum">     292</span> <span class="tlaGNC">          40 :         current_run_ids = next_pass_run_ids;</span></span>
+<span id="L293"><span class="lineNum">     293</span> <span class="tlaGNC">         237 :         for (const auto&amp; id_del : runs_to_delete_this_pass) {</span></span>
+<span id="L294"><span class="lineNum">     294</span> <span class="tlaGNC">         197 :             if (id_del != output_id_) {</span></span>
+<span id="L295"><span class="lineNum">     295</span> <span class="tlaGNC">         197 :                 stream_factory_.DeleteStorage(id_del);</span></span>
+<span id="L296"><span class="lineNum">     296</span>              :             }</span>
+<span id="L297"><span class="lineNum">     297</span>              :         }</span>
+<span id="L298"><span class="lineNum">     298</span>              :     }</span>
+<span id="L299"><span class="lineNum">     299</span>              : </span>
+<span id="L300"><span class="lineNum">     300</span> <span class="tlaGNC">          37 :     if (current_run_ids.size() == 1) {</span></span>
+<span id="L301"><span class="lineNum">     301</span> <span class="tlaGNC">          37 :         if (current_run_ids[0] != output_id_) {</span></span>
+<span id="L302"><span class="lineNum">     302</span> <span class="tlaGNC">           6 :             detail::LogInfo(&quot;KWayMergeSorter: Finalizing &quot; + current_run_ids[0] + &quot; as &quot; +</span></span>
+<span id="L303"><span class="lineNum">     303</span> <span class="tlaGNC">           6 :                             output_id_);</span></span>
+<span id="L304"><span class="lineNum">     304</span> <span class="tlaGNC">           6 :             stream_factory_.MakeStoragePermanent(current_run_ids[0], output_id_);</span></span>
+<span id="L305"><span class="lineNum">     305</span>              :         } else {</span>
+<span id="L306"><span class="lineNum">     306</span> <span class="tlaGNC">          31 :             detail::LogInfo(&quot;KWayMergeSorter: Output is already in &quot; + output_id_);</span></span>
+<span id="L307"><span class="lineNum">     307</span>              :         }</span>
+<span id="L308"><span class="lineNum">     308</span> <span class="tlaUNC tlaBgUNC">           0 :     } else if (current_run_ids.empty() &amp;&amp; !stream_factory_.StorageExists(output_id_)) {</span></span>
+<span id="L309"><span class="lineNum">     309</span> <span class="tlaUNC">           0 :         detail::LogInfo(&quot;KWayMergeSorter: No runs left and output &quot; + output_id_ +</span></span>
+<span id="L310"><span class="lineNum">     310</span>              :                         &quot; does not exist. Creating empty.&quot;);</span>
+<span id="L311"><span class="lineNum">     311</span> <span class="tlaUNC">           0 :         auto empty_out = stream_factory_.CreateOutputStream(output_id_, file_io_buffer_elements_);</span></span>
+<span id="L312"><span class="lineNum">     312</span> <span class="tlaUNC">           0 :         empty_out-&gt;Finalize();</span></span>
+<span id="L313"><span class="lineNum">     313</span> <span class="tlaUNC">           0 :     } else if (!current_run_ids.empty()) {</span></span>
+<span id="L314"><span class="lineNum">     314</span> <span class="tlaUNC">           0 :         detail::LogError(&quot;Error: KWayMergeSorter finished with unexpected runs: &quot; +</span></span>
+<span id="L315"><span class="lineNum">     315</span> <span class="tlaUNC">           0 :                          std::to_string(current_run_ids.size()));</span></span>
+<span id="L316"><span class="lineNum">     316</span>              :     }</span>
+<span id="L317"><span class="lineNum">     317</span> <span class="tlaGNC tlaBgGNC">          39 : }</span></span>
+<span id="L318"><span class="lineNum">     318</span>              : </span>
+<span id="L319"><span class="lineNum">     319</span>              : }  // namespace external_sort</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>

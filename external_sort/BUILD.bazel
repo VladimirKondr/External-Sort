@@ -33,6 +33,7 @@ cc_binary(
 cc_test(
     name = "complex_types_test",
     srcs = ["tests/complex_types_test.cpp"],
+    size = "small",
     copts = ["-std=c++20"],
     deps = [
         ":external_sort",
@@ -46,6 +47,7 @@ cc_test(
 cc_test(
     name = "string_sorting_test",
     srcs = ["tests/string_sorting_test.cpp"],
+    size = "small",
     copts = ["-std=c++20"],
     deps = [
         ":external_sort",
@@ -59,6 +61,7 @@ cc_test(
 cc_test(
     name = "basic_sorting_file_test",
     srcs = ["tests/file/basic_sorting_file_test.cpp"],
+    size = "small",
     copts = ["-std=c++20"],
     deps = [
         ":external_sort",
@@ -72,6 +75,7 @@ cc_test(
 cc_test(
     name = "pod_types_file_test",
     srcs = ["tests/file/pod_types_file_test.cpp"],
+    size = "small",
     copts = ["-std=c++20"],
     deps = [
         ":external_sort",
@@ -85,6 +89,7 @@ cc_test(
 cc_test(
     name = "basic_sorting_memory_test",
     srcs = ["tests/memory/basic_sorting_memory_test.cpp"],
+    size = "small",
     copts = ["-std=c++20"],
     deps = [
         ":external_sort",
@@ -98,6 +103,7 @@ cc_test(
 cc_test(
     name = "pod_types_memory_test",
     srcs = ["tests/memory/pod_types_memory_test.cpp"],
+    size = "small",
     copts = ["-std=c++20"],
     deps = [
         ":external_sort",
@@ -105,5 +111,16 @@ cc_test(
         "//logging",
         "//serialization",
         "@googletest//:gtest_main",
+    ],
+)
+
+cc_binary(
+    name = "performance_runner",
+    srcs = ["benchmarks/performance_benchmark.cpp"],
+    copts = ["-std=c++20", "-O3", "-DNDEBUG"],
+    deps = [
+        ":external_sort",
+        "//io",
+        "@google_benchmark//:benchmark",
     ],
 )

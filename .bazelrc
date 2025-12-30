@@ -20,3 +20,6 @@ build:clangd --compilation_mode=dbg
 build:clangd --copt="-g"
 build:clangd --cxxopt="-g"
 build:clangd --features=debug_prefix_map_pwd_is_dot
+
+coverage --combined_report=lcov
+coverage --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main
