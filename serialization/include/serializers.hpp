@@ -30,35 +30,60 @@
  * **Alternative:** Create a wrapper type with Serialize/Deserialize methods
  * or Serialize/Deserialize free functions in its' namespace.
  *
- * @section performance_optimization Performance Optimization
+ * @section performance_optimization Performance-Critical Consideration: The GetSerializedSize() Method
  *
- * The serialization library provides automatic size calculation through GetSerializedSize().
- * For optimal performance, especially in benchmarks or large-scale data processing:
+ * A key feature of this library is the ability to pre-calculate the serialized size of an
+ * object via `GetSerializedSize()`. This is crucial for performance in algorithms like
+ * external sorting, which need to manage memory buffers efficiently.
  *
- * **For types using MethodSerializer (most common):**
- * Add a GetSerializedSize() const method to your type. This enables fast O(1) size
- * calculation instead of O(n) serialization to /dev/null:
+ * The library uses two strategies to calculate this size:
+ *
+ * 1.  **Optimized Path (Fast, O(1) or arithmetic)**: If a type provides a public const method
+ *     `uint64_t GetSerializedSize() const`, it will be called directly. This is the
+ *     **strongly recommended** approach for any custom type used in performance-sensitive
+ *     code. This method should return the exact size in bytes that `Serialize()` would write.
+ *
+ *     @code{.cpp}
+ *     struct MyData {
+ *         uint64_t id;
+ *         std::string name;
+ *
+ *         bool Serialize(FILE* file) const { ... }
+ *         bool Deserialize(FILE* file) { ... }
+ *
+ *         // RECOMMENDED: Add this for optimal performance!
+ *         uint64_t GetSerializedSize() const {
+ *             return sizeof(id) + (sizeof(uint64_t) + name.length());
+ *         }
+ *     };
+ *     @endcode
+ *
+ * 2.  **Fallback Path (Slow, involves I/O)**: If a type has `Serialize`/`Deserialize` methods
+ *     but **lacks** `GetSerializedSize()`, the framework will fall back to a slower mechanism:
+ *     it will perform a full serialization of the object to a null device (`/dev/null` or `NUL`)
+ *     and count the bytes written. This works correctly but introduces significant I/O overhead.
+ *
+ * @subsection limitation Current Implementation Limitation
+ *
+ * This library does **not** support automatic reflection to deduce the serialized size by
+ * recursively summing the sizes of a struct's members. For an aggregate struct like:
  *
  * @code{.cpp}
- * struct Person {
- *     std::string name;
- *     int32_t age;
- *     std::string address;
- *     
- *     bool Serialize(FILE* file) const { ... }
- *     bool Deserialize(FILE* file) { ... }
- *     
- *     // RECOMMENDED: Add this for optimal performance!
- *     uint64_t GetSerializedSize() const {
- *         return sizeof(size_t) + name.size()      // name field
- *              + sizeof(int32_t)                   // age field
- *              + sizeof(size_t) + address.size();  // address field
- *     }
+ * struct Aggregate {
+ *     uint64_t field1;
+ *     std::string field2;
  * };
  * @endcode
  *
- * Without GetSerializedSize(), the library will work correctly but will serialize
- * to /dev/null for size calculation, which is significantly slower.
+ * ...the library cannot automatically calculate its size as `sizeof(field1) + size_of(field2)`.
+ * The user is responsible for providing the serialization logic, and for performance, the
+ * `GetSerializedSize()` method. Implementing this automatic behavior would require advanced
+ * metaprogramming techniques that are beyond the scope of this project.
+ *
+ * **Conclusion**: For any non-POD type that will be part of a large dataset, always implement
+ * the `GetSerializedSize()` method to avoid performance degradation. The benchmarks for this
+ * project demonstrate the significant difference in speed between the optimized and fallback paths.
+ *
  *
  * @see serialization::CreateSerializer
  * @see serialization::Serializer<std::vector<T>>

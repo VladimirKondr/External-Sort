@@ -7,6 +7,7 @@
 
 #include "external_sort_logging.hpp"
 #include "interfaces.hpp"
+#include "serializers.hpp"
 #include "storage_types.hpp"
 
 #include <algorithm>
@@ -33,7 +34,8 @@ struct MergeSource {
 template <typename T>
 struct MergeSourceComparatorStatic {
     bool ascending;
-    explicit MergeSourceComparatorStatic(bool asc) : ascending(asc) {}
+    explicit MergeSourceComparatorStatic(bool asc) : ascending(asc) {
+    }
 
     bool operator()(const MergeSource<T>& a, const MergeSource<T>& b) const {
         const T& va = a.stream->Value();
@@ -135,49 +137,86 @@ public:
  * The sorter uses these methods internally (when available) to minimize copies
  * by moving elements between streams and temporary buffers.
  */
-
 template <typename T>
 std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
+    detail::LogInfo(">>> CreateInitialRuns started for input: '" + input_id_ +
+                    "' with memory limit: " + std::to_string(memory_for_runs_bytes_ / (1024.0 * 1024.0)) + " MB");
+    detail::LogInfo("    sizeof(T) = " + std::to_string(sizeof(T)) + " bytes");
+
     std::unique_ptr<io::IInputStream<T>> input_stream =
         stream_factory_.CreateInputStream(input_id_, file_io_buffer_elements_);
 
     if (input_stream->IsEmptyOriginalStorage()) {
-        detail::LogInfo("KWayMergeSorter: Input storage " + input_id_ + " is empty. No runs.");
+        detail::LogInfo("KWayMergeSorter: Input storage is empty. No runs created.");
         return {};
     }
 
+    auto serializer = serialization::CreateSerializer<T>();
     std::vector<io::StorageId> run_ids;
-    std::vector<T> run_buffer_std_vec;
-    const uint64_t elements_per_run = memory_for_runs_bytes_ / sizeof(T);
-    if (elements_per_run == 0) {
-        throw std::runtime_error("KWayMergeSorter: Memory limit too small.");
-    }
-    run_buffer_std_vec.reserve(elements_per_run);
+    std::vector<T> run_buffer;
+    int run_counter = 1;
 
     while (!input_stream->IsExhausted()) {
-        run_buffer_std_vec.clear();
-        while (run_buffer_std_vec.size() < elements_per_run && !input_stream->IsExhausted()) {
-            run_buffer_std_vec.push_back(input_stream->TakeValue());
+        run_buffer.clear();
+        uint64_t current_run_mem_usage = 0;
+        int element_counter = 0;
+        
+        detail::LogInfo("--- Starting Run #" + std::to_string(run_counter++) + " ---");
+
+        while (!input_stream->IsExhausted()) {
+            const T& current_element = input_stream->Value();
+            
+            uint64_t serialized_size = serializer->GetSerializedSize(current_element);
+            uint64_t estimated_element_footprint;
+
+            if constexpr (std::is_trivial_v<T> && std::is_standard_layout_v<T>) {
+                estimated_element_footprint = sizeof(T);
+            } else {
+                estimated_element_footprint = serialized_size + sizeof(T);
+            }
+
+            detail::LogInfo("[Loop " + std::to_string(element_counter++) + "]: "
+                            "current_mem=" + std::to_string(current_run_mem_usage) +
+                            ", next_elem_footprint=" + std::to_string(estimated_element_footprint) +
+                            " (ser_size=" + std::to_string(serialized_size) + ")" +
+                            ", limit=" + std::to_string(memory_for_runs_bytes_) +
+                            ", vec_size=" + std::to_string(run_buffer.size()) +
+                            ", vec_cap=" + std::to_string(run_buffer.capacity()));
+
+            if (run_buffer.empty()) {
+                if (estimated_element_footprint > memory_for_runs_bytes_) {
+                    throw std::runtime_error("KWayMergeSorter: Memory limit is too small for a single element.");
+                }
+            } 
+            else if (current_run_mem_usage + estimated_element_footprint > memory_for_runs_bytes_) {
+                detail::LogInfo("    Limit reached. Breaking loop to finalize run.");
+                break;
+            }
+
+            current_run_mem_usage += estimated_element_footprint;
+            run_buffer.push_back(input_stream->TakeValue());
             input_stream->Advance();
         }
 
-        if (!run_buffer_std_vec.empty()) {
+        if (!run_buffer.empty()) {
+            detail::LogInfo("    Sorting " + std::to_string(run_buffer.size()) + " elements...");
             if (ascending_) {
-                std::sort(run_buffer_std_vec.begin(), run_buffer_std_vec.end());
+                std::sort(run_buffer.begin(), run_buffer.end());
             } else {
-                std::sort(run_buffer_std_vec.begin(), run_buffer_std_vec.end(), std::greater<T>());
+                std::sort(run_buffer.begin(), run_buffer.end(), std::greater<T>());
             }
 
             io::StorageId run_id;
             std::unique_ptr<io::IOutputStream<T>> out_run =
                 stream_factory_.CreateTempOutputStream(run_id, file_io_buffer_elements_);
-            for (T& val : run_buffer_std_vec) {
+            for (T& val : run_buffer) {
                 out_run->Write(std::move(val));
             }
             out_run->Finalize();
             run_ids.push_back(std::move(run_id));
-            detail::LogInfo("KWayMergeSorter: Created initial run " + run_id + " with " +
-                            std::to_string(out_run->GetTotalElementsWritten()) + " elements.");
+            detail::LogInfo("    Run created: " + run_id + " with " +
+                            std::to_string(out_run->GetTotalElementsWritten()) +
+                            " elements. Estimated mem usage: " + std::to_string(current_run_mem_usage) + " bytes.");
         }
     }
     return run_ids;
