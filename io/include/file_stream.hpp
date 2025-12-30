@@ -121,6 +121,7 @@ private:
     FILE* file_ptr_ = nullptr;             ///< Pointer to the file
     ElementBuffer<T> buffer_;              ///< Buffer for writing
     uint64_t total_elements_written_ = 0;  ///< Number of elements written
+    uint64_t total_bytes_written_ = 0;     ///< Total bytes written (data + header)
     bool finalized_ = false;               ///< Flag indicating if the stream has been finalized
     std::unique_ptr<serialization::Serializer<T>>
         serializer_member_{};  ///< Serializer for the elements
@@ -174,6 +175,12 @@ public:
      * @return The number of elements written to the stream
      */
     uint64_t GetTotalElementsWritten() const override;
+
+    /**
+     * @brief Returns the total number of bytes written to the file
+     * @return The total number of bytes written (including header)
+     */
+    uint64_t GetTotalBytesWritten() const override;
 
     /**
      * @brief Returns the file identifier
@@ -444,13 +451,16 @@ void FileOutputStream<T>::FlushBufferInternal() {
     uint64_t successful_writes = 0;
     if constexpr (serialization::PodSerializable<T>) {
         successful_writes = fwrite(buffer_.Data(), sizeof(T), buffer_.Size(), file_ptr_);
+        total_bytes_written_ += successful_writes * sizeof(T);
     } else {
         const T* data = buffer_.Data();
         for (uint64_t i = 0; i < buffer_.Size(); ++i) {
+            uint64_t element_size = serializer_member_->GetSerializedSize(data[i]);
             if (!serializer_member_->Serialize(data[i], file_ptr_)) {
                 throw std::runtime_error("FileOutputStream: Failed to Serialize element to file: " +
                                          id_);
             }
+            total_bytes_written_ += element_size;
             successful_writes++;
         }
     }
@@ -482,6 +492,8 @@ FileOutputStream<T>::FileOutputStream(const StorageId& filename, uint64_t buffer
         fclose(file_ptr_);
         throw std::runtime_error("FileOutputStream: Failed to write placeholder size to " + id_);
     }
+    // Account for the header size in total bytes written
+    total_bytes_written_ = sizeof(uint64_t);
     detail::LogInfo("FileOutputStream: " + id_ + " opened for writing.");
 }
 
@@ -496,6 +508,7 @@ FileOutputStream<T>::FileOutputStream(FileOutputStream&& other) noexcept
       file_ptr_(other.file_ptr_),
       buffer_(std::move(other.buffer_)),
       total_elements_written_(other.total_elements_written_),
+      total_bytes_written_(other.total_bytes_written_),
       finalized_(other.finalized_),
       serializer_member_(std::move(other.serializer_member_)) {
     other.file_ptr_ = nullptr;
@@ -510,6 +523,7 @@ FileOutputStream<T>& FileOutputStream<T>::operator=(FileOutputStream&& other) no
         file_ptr_ = other.file_ptr_;
         buffer_ = std::move(other.buffer_);
         total_elements_written_ = other.total_elements_written_;
+        total_bytes_written_ = other.total_bytes_written_;
         finalized_ = other.finalized_;
         serializer_member_ = std::move(other.serializer_member_);
         other.file_ptr_ = nullptr;
@@ -565,6 +579,11 @@ void FileOutputStream<T>::Finalize() {
 template <typename T>
 uint64_t FileOutputStream<T>::GetTotalElementsWritten() const {
     return total_elements_written_;
+}
+
+template <typename T>
+uint64_t FileOutputStream<T>::GetTotalBytesWritten() const {
+    return total_bytes_written_;
 }
 
 template <typename T>

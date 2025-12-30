@@ -8,6 +8,33 @@
 #include <fstream>
 #include <gtest/gtest.h>
 
+struct ComplexType {
+    uint32_t id;
+    std::string name;
+
+    bool Serialize(FILE* file) const {
+        if (fwrite(&id, sizeof(id), 1, file) != 1) {
+            return false;
+        }
+        serialization::Serializer<std::string> str_serializer;
+        return str_serializer.Serialize(name, file);
+    }
+
+    // Deserialize is not needed for this test, but it can be added for completeness
+    bool Deserialize(FILE* file) {
+        if (fread(&id, sizeof(id), 1, file) != 1) {
+            return false;
+        }
+        serialization::Serializer<std::string> str_serializer;
+        return str_serializer.Deserialize(name, file);
+    }
+
+    // Important for verification: add GetSerializedSize
+    uint64_t GetSerializedSize() const {
+        return sizeof(id) + sizeof(uint64_t) + name.length();
+    }
+};
+
 /**
  * @brief Fixture for file stream tests
  */
@@ -344,4 +371,178 @@ TEST(FileStreamGenericTest, DifferentTypes) {
     }
 
     std::filesystem::remove_all(test_dir);
+}
+
+class FileStreamBytesWrittenTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        logging::SetDefaultLogger();
+        test_dir_ = "test_bytes_written";
+        if (std::filesystem::exists(test_dir_)) {
+            std::filesystem::remove_all(test_dir_);
+        }
+        std::filesystem::create_directory(test_dir_);
+    }
+
+    void TearDown() override {
+        if (std::filesystem::exists(test_dir_)) {
+            std::filesystem::remove_all(test_dir_);
+        }
+    }
+
+    std::string test_dir_;
+};
+
+/**
+ * @brief Verifies byte counting for POD types.
+ */
+TEST_F(FileStreamBytesWrittenTest, BytesWrittenForPodType) {
+    std::string test_file = (std::filesystem::path(test_dir_) / "pod_test.bin").string();
+    io::FileStreamFactory<int> factory(test_dir_);
+
+    const std::vector<int> test_data = {10, 20, 30, 40, 50};
+    uint64_t expected_bytes = sizeof(uint64_t) + test_data.size() * sizeof(int);
+
+    {
+        auto output = factory.CreateOutputStream(test_file, 100);
+
+        // Immediately after creation the stream should contain only the header
+        EXPECT_EQ(output->GetTotalBytesWritten(), sizeof(uint64_t));
+
+        for (int val : test_data) {
+            output->Write(val);
+        }
+        output->Finalize();
+
+        // Check the internal counter
+        EXPECT_EQ(output->GetTotalBytesWritten(), expected_bytes);
+    }
+
+    // Verify actual file size on disk
+    EXPECT_TRUE(std::filesystem::exists(test_file));
+    EXPECT_EQ(std::filesystem::file_size(test_file), expected_bytes);
+}
+
+/**
+ * @brief Verifies byte counting for variable-size types (std::string).
+ */
+TEST_F(FileStreamBytesWrittenTest, BytesWrittenForNonPodType) {
+    std::string test_file = (std::filesystem::path(test_dir_) / "string_test.bin").string();
+    io::FileStreamFactory<std::string> factory(test_dir_);
+
+    const std::vector<std::string> test_data = {"hello", "world", "", "тест 🚀"};
+
+    uint64_t expected_bytes = sizeof(uint64_t);  // File header
+    for (const auto& s : test_data) {
+        // For each string: sizeof(length) + string data
+        expected_bytes += sizeof(uint64_t) + s.length();
+    }
+
+    {
+        auto output = factory.CreateOutputStream(test_file, 100);
+        EXPECT_EQ(output->GetTotalBytesWritten(), sizeof(uint64_t));
+
+        for (const auto& val : test_data) {
+            output->Write(val);
+        }
+        output->Finalize();
+
+        EXPECT_EQ(output->GetTotalBytesWritten(), expected_bytes);
+    }
+
+    EXPECT_TRUE(std::filesystem::exists(test_file));
+    EXPECT_EQ(std::filesystem::file_size(test_file), expected_bytes);
+}
+
+/**
+ * @brief Verifies byte counting for complex user-defined type.
+ */
+TEST_F(FileStreamBytesWrittenTest, BytesWrittenForComplexType) {
+    std::string test_file = (std::filesystem::path(test_dir_) / "complex_test.bin").string();
+    io::FileStreamFactory<ComplexType> factory(test_dir_);
+
+    const std::vector<ComplexType> test_data = {{1, "first"}, {2, "second long name"}};
+
+    uint64_t expected_bytes = sizeof(uint64_t);  // File header
+    for (const auto& item : test_data) {
+        expected_bytes += item.GetSerializedSize();
+    }
+
+    {
+        auto output = factory.CreateOutputStream(test_file, 100);
+        EXPECT_EQ(output->GetTotalBytesWritten(), sizeof(uint64_t));
+
+        for (const auto& val : test_data) {
+            output->Write(val);
+        }
+        output->Finalize();
+
+        EXPECT_EQ(output->GetTotalBytesWritten(), expected_bytes);
+    }
+
+    EXPECT_TRUE(std::filesystem::exists(test_file));
+    EXPECT_EQ(std::filesystem::file_size(test_file), expected_bytes);
+}
+
+/**
+ * @brief Verifies that an empty file has the header size.
+ */
+TEST_F(FileStreamBytesWrittenTest, BytesWrittenForEmptyFile) {
+    std::string test_file = (std::filesystem::path(test_dir_) / "empty_test.bin").string();
+    io::FileStreamFactory<int> factory(test_dir_);
+
+    uint64_t expected_bytes = sizeof(uint64_t);
+
+    {
+        auto output = factory.CreateOutputStream(test_file, 100);
+        EXPECT_EQ(output->GetTotalBytesWritten(), expected_bytes);
+        output->Finalize();
+        EXPECT_EQ(output->GetTotalBytesWritten(), expected_bytes);
+    }
+
+    EXPECT_TRUE(std::filesystem::exists(test_file));
+    EXPECT_EQ(std::filesystem::file_size(test_file), expected_bytes);
+}
+
+/**
+ * @brief Verifies correctness of byte counting during automatic buffer flushing.
+ */
+TEST_F(FileStreamBytesWrittenTest, BytesWrittenWithBufferFlushing) {
+    std::string test_file = (std::filesystem::path(test_dir_) / "flush_test.bin").string();
+    io::FileStreamFactory<std::string> factory(test_dir_);
+
+    // Use a small buffer to trigger flushing
+    const uint64_t buffer_size = 2;
+    auto output = factory.CreateOutputStream(test_file, buffer_size);
+
+    uint64_t running_byte_count = sizeof(uint64_t);
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_byte_count);
+
+    // 1. Write the first element. It stays in the buffer.
+    std::string s1 = "one";
+    output->Write(s1);
+    // The byte counter should NOT change since no flush has occurred yet
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_byte_count);
+
+    // 2. Write the second element. The buffer fills and is flushed.
+    std::string s2 = "two";
+    output->Write(s2);
+    running_byte_count += (sizeof(uint64_t) + s1.length());
+    running_byte_count += (sizeof(uint64_t) + s2.length());
+    // Now the counter should be updated
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_byte_count);
+
+    // 3. Write the third element. It stays in the buffer.
+    std::string s3 = "three";
+    output->Write(s3);
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_byte_count);
+
+    // 4. Finalize. The remaining element is flushed.
+    output->Finalize();
+    running_byte_count += (sizeof(uint64_t) + s3.length());
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_byte_count);
+
+    // Final check of file size
+    EXPECT_TRUE(std::filesystem::exists(test_file));
+    EXPECT_EQ(std::filesystem::file_size(test_file), running_byte_count);
 }

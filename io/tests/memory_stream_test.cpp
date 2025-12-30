@@ -345,3 +345,168 @@ TEST(MemoryStreamGenericTest, DifferentTypes) {
         EXPECT_EQ(read_data, test_data);
     }
 }
+
+/**
+ * @brief A complex type with a variable-size member for testing serialization.
+ *
+ * This struct is used to verify that GetTotalBytesWritten correctly handles
+ * user-defined types that have their own GetSerializedSize method.
+ */
+struct ComplexType {
+    uint32_t id;
+    std::string name;
+
+    /**
+     * @brief Serializes the object to a file stream.
+     * @param file The file to write to.
+     * @return true on success, false on failure.
+     */
+    bool Serialize(FILE* file) const {
+        if (fwrite(&id, sizeof(id), 1, file) != 1) {
+            return false;
+        }
+        serialization::Serializer<std::string> str_serializer;
+        return str_serializer.Serialize(name, file);
+    }
+
+    /**
+     * @brief Deserializes the object from a file stream.
+     * @param file The file to read from.
+     * @return true on success, false on failure.
+     */
+    bool Deserialize(FILE* file) {
+        if (fread(&id, sizeof(id), 1, file) != 1) {
+            return false;
+        }
+        serialization::Serializer<std::string> str_serializer;
+        return str_serializer.Deserialize(name, file);
+    }
+
+    /**
+     * @brief Calculates the serialized size of the object.
+     * @return The size in bytes.
+     */
+    uint64_t GetSerializedSize() const {
+        return sizeof(id) + sizeof(uint64_t) + name.length();
+    }
+};
+
+/**
+ * @brief Test fixture dedicated to verifying GetTotalBytesWritten for InMemoryOutputStream.
+ */
+class MemoryStreamBytesWrittenTest : public ::testing::Test {
+protected:
+    /**
+     * @brief Sets up the test environment.
+     */
+    void SetUp() override {
+        logging::SetDefaultLogger();
+    }
+};
+
+/**
+ * @brief Verifies the byte count for an empty stream.
+ *
+ * Checks that a newly created stream, or a stream that is finalized
+ * without any writes, correctly reports its size as just the header.
+ */
+TEST_F(MemoryStreamBytesWrittenTest, BytesWrittenForEmptyStream) {
+    io::InMemoryStreamFactory<int> factory;
+    const std::string storage_id = "empty_stream_bytes";
+    uint64_t expected_header_size = sizeof(uint64_t);
+
+    {
+        auto output = factory.CreateOutputStream(storage_id, 100);
+
+        // Immediately after creation, the size should be the header size.
+        EXPECT_EQ(output->GetTotalBytesWritten(), expected_header_size);
+
+        output->Finalize();
+
+        // After finalization with no data, the size should still be the header size.
+        EXPECT_EQ(output->GetTotalBytesWritten(), expected_header_size);
+    }
+}
+
+/**
+ * @brief Verifies the byte count for Plain Old Data (POD) types.
+ *
+ * This test writes several POD elements (`int`) and confirms that the total
+ * byte count is the sum of the header size and N * sizeof(int).
+ */
+TEST_F(MemoryStreamBytesWrittenTest, BytesWrittenForPodType) {
+    io::InMemoryStreamFactory<int> factory;
+    const std::string storage_id = "pod_stream_bytes";
+
+    const std::vector<int> test_data = {10, 20, 30, 40, 50};
+    uint64_t running_expected_bytes = sizeof(uint64_t);  // Start with header size
+
+    auto output = factory.CreateOutputStream(storage_id, 100);
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+
+    for (int val : test_data) {
+        output->Write(val);
+        running_expected_bytes += sizeof(int);
+        // Since there is no buffering, the count should update after each write.
+        EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+    }
+
+    output->Finalize();
+
+    // The final size should match the accumulated total.
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+}
+
+/**
+ * @brief Verifies the byte count for non-POD, variable-size types like std::string.
+ *
+ * This test ensures that the byte count correctly uses the serializer's
+ * GetSerializedSize for each element, accounting for the size prefix and data.
+ */
+TEST_F(MemoryStreamBytesWrittenTest, BytesWrittenForNonPodType) {
+    io::InMemoryStreamFactory<std::string> factory;
+    const std::string storage_id = "string_stream_bytes";
+
+    const std::vector<std::string> test_data = {"hello", "world", "", "test with unicode 🚀"};
+    uint64_t running_expected_bytes = sizeof(uint64_t);  // Start with header size
+
+    auto output = factory.CreateOutputStream(storage_id, 100);
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+
+    serialization::Serializer<std::string> str_serializer;
+    for (const auto& val : test_data) {
+        output->Write(val);
+        running_expected_bytes += str_serializer.GetSerializedSize(val);
+        EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+    }
+
+    output->Finalize();
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+}
+
+/**
+ * @brief Verifies the byte count for a custom complex type.
+ *
+ * This test uses a user-defined struct to ensure GetTotalBytesWritten works
+ * correctly with any serializable type that provides GetSerializedSize.
+ */
+TEST_F(MemoryStreamBytesWrittenTest, BytesWrittenForComplexType) {
+    io::InMemoryStreamFactory<ComplexType> factory;
+    const std::string storage_id = "complex_stream_bytes";
+
+    const std::vector<ComplexType> test_data = {{1, "first item"}, {2, "second item"}};
+    uint64_t running_expected_bytes = sizeof(uint64_t);  // Start with header size
+
+    auto output = factory.CreateOutputStream(storage_id, 100);
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+
+    serialization::MethodSerializer<ComplexType> item_serializer;
+    for (const auto& val : test_data) {
+        output->Write(val);
+        running_expected_bytes += item_serializer.GetSerializedSize(val);
+        EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+    }
+
+    output->Finalize();
+    EXPECT_EQ(output->GetTotalBytesWritten(), running_expected_bytes);
+}

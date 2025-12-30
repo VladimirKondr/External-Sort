@@ -7,6 +7,7 @@
 
 #include "io_logging.hpp"
 #include "interfaces.hpp"
+#include "serializers.hpp"
 
 #include <map>
 #include <memory>
@@ -75,6 +76,12 @@ class InMemoryOutputStream : public IOutputStream<T> {
      * @return Number of elements written to the stream
      */
     uint64_t GetTotalElementsWritten() const override;
+
+    /**
+     * @brief Returns the total number of bytes that would be written if serialized
+     * @return Estimated total bytes for in-memory data
+     */
+    uint64_t GetTotalBytesWritten() const override;
 
     /**
      * @brief Returns the stream identifier
@@ -292,6 +299,20 @@ void InMemoryOutputStream<T>::Finalize() {
 template <typename T>
 uint64_t InMemoryOutputStream<T>::GetTotalElementsWritten() const {
     return elements_written_;
+}
+
+template <typename T>
+uint64_t InMemoryOutputStream<T>::GetTotalBytesWritten() const {
+    // For in-memory streams, calculate the serialized size of all elements
+    // This includes the "header" (element count) that would be written to a file
+    uint64_t total_bytes = sizeof(uint64_t);  // Header with element count
+    
+    auto serializer = serialization::CreateSerializer<T>();
+    for (size_t i = 0; i < elements_written_; ++i) {
+        total_bytes += serializer->GetSerializedSize((*data_ptr_)[i]);
+    }
+    
+    return total_bytes;
 }
 
 template <typename T>

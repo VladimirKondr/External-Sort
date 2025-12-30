@@ -91,6 +91,38 @@ class IOutputStream {
     virtual uint64_t GetTotalElementsWritten() const = 0;
 
     /**
+     * @brief Returns the total number of bytes written to the storage
+     *
+     * This method returns the actual size in bytes of the serialized data written
+     * to the storage. For complex types (e.g., types with dynamic memory like 
+     * std::string), this accounts for the actual serialized size, not just 
+     * sizeof(T) * element_count.
+     *
+     * This is particularly useful for:
+     * - Tracking actual disk usage for file-based streams
+     * - Generating data files of specific target sizes in benchmarks
+     * - Monitoring memory usage for in-memory streams
+     * - Estimating storage requirements for complex data types
+     *
+     * @return The total number of bytes written (including any headers/metadata)
+     *
+     * @note For POD types, this typically equals: sizeof(header) + sizeof(T) * GetTotalElementsWritten()
+     * @note For complex types (std::string, custom types), this reflects the actual serialized size
+     * @note This value includes file headers (e.g., element count header in FileOutputStream)
+     *
+     * @par Example:
+     * @code
+     * auto output_stream = factory->CreateOutputStream("data.bin", 1024);
+     * for (const auto& person : people) {
+     *     output_stream->Write(person);
+     * }
+     * uint64_t total_bytes = output_stream->GetTotalBytesWritten();
+     * // total_bytes will be the actual file size including all string data
+     * @endcode
+     */
+    virtual uint64_t GetTotalBytesWritten() const = 0;
+
+    /**
      * @brief Returns the identifier of the storage
      * @return The StorageId of the storage associated with the stream
      */
