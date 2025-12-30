@@ -94,6 +94,13 @@ public:
      * @return true if the file contained no elements
      */
     bool IsEmptyOriginalStorage() const override;
+
+    /**
+     * @brief Transfers the ownership of the current value and resets the state
+     * @return The current value
+     * @throws std::logic_error if the stream is exhausted
+     */
+    T TakeValue();
 };
 
 /**
@@ -146,6 +153,13 @@ public:
      * @throws std::logic_error if the stream has been finalized
      */
     void Write(const T& value) override;
+
+    /**
+     * @brief Writes an rvalue element to the stream
+     * @param value The rvalue element to write
+     * @throws std::logic_error if the stream has been finalized
+     */
+    void Write(T&& value);
 
     /**
      * @brief Finalizes the stream, writing all buffered data to the file
@@ -399,6 +413,16 @@ const T& FileInputStream<T>::Value() const {
 }
 
 template <typename T>
+T FileInputStream<T>::TakeValue() {
+    if (!has_valid_value_) {
+        throw std::logic_error("TakeValue from exhausted FileInputStream: " + id_);
+    }
+    T tmp = std::move(current_value_);
+    has_valid_value_ = false;
+    return tmp;
+}
+
+template <typename T>
 bool FileInputStream<T>::IsExhausted() const {
     return is_exhausted_ && !has_valid_value_;
 }
@@ -503,6 +527,17 @@ void FileOutputStream<T>::Write(const T& value) {
 }
 
 template <typename T>
+void FileOutputStream<T>::Write(T&& value) {
+    if (finalized_) {
+        throw std::logic_error("Write to finalized FileOutputStream: " + id_);
+    }
+    if (buffer_.PushBack(std::move(value))) {
+        FlushBufferInternal();
+    }
+    total_elements_written_++;
+}
+
+template <typename T>
 void FileOutputStream<T>::Finalize() {
     if (finalized_ || !file_ptr_) {
         return;
@@ -585,7 +620,7 @@ void FileStreamFactory<T>::MakeStoragePermanent(const StorageId& temp_id,
             FileInputStream<T> src(temp_id, 1024);
             FileOutputStream<T> dst(final_id, 1024);
             while (!src.IsExhausted()) {
-                dst.Write(src.Value());
+                dst.Write(src.TakeValue());
                 src.Advance();
             }
         }

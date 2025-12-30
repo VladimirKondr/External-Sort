@@ -56,6 +56,13 @@ class InMemoryOutputStream : public IOutputStream<T> {
     void Write(const T& value) override;
 
     /**
+     * @brief Writes an rvalue element to the stream
+     * @param value Rvalue element to write
+     * @throws std::logic_error if the stream is finalized
+     */
+    void Write(T&& value) override;
+
+    /**
      * @brief Finalizes the stream
      */
     void Finalize() override;
@@ -120,6 +127,13 @@ class InMemoryInputStream : public IInputStream<T> {
      * @throws std::logic_error if the stream is exhausted
      */
     const T& Value() const override;
+
+    /**
+     * @brief Takes the current element of the stream (removing it from the stream)
+     * @return The current element
+     * @throws std::logic_error if the stream is exhausted
+     */
+    T TakeValue() override;
 
     /**
      * @brief Checks if the stream is exhausted
@@ -253,6 +267,15 @@ void InMemoryOutputStream<T>::Write(const T& value) {
 }
 
 template <typename T>
+void InMemoryOutputStream<T>::Write(T&& value) {
+    if (finalized_) {
+        throw std::logic_error("Write to finalized InMemoryOutputStream: " + id_);
+    }
+    data_ptr_->push_back(std::move(value));
+    elements_written_++;
+}
+
+template <typename T>
 void InMemoryOutputStream<T>::Finalize() {
     if (finalized_) {
         return;
@@ -317,6 +340,15 @@ const T& InMemoryInputStream<T>::Value() const {
         throw std::logic_error("Value from exhausted InMemoryInputStream: " + id_);
     }
     return current_value_;
+}
+
+template <typename T>
+T InMemoryInputStream<T>::TakeValue() {
+    if (!has_valid_value_) {
+        throw std::logic_error("TakeValue from exhausted InMemoryInputStream: " + id_);
+    }
+    T tmp = std::move(current_value_);
+    return tmp;
 }
 
 template <typename T>

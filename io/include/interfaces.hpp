@@ -34,6 +34,16 @@ class IInputStream {
     virtual const T& Value() const = 0;
 
     /**
+     * @brief Move out the current element of the stream
+     *
+     * Returns the current element by value using move semantics where possible.
+     * Does not advance the stream; call Advance() to move to the next element.
+     * @return Current element by value
+     * @throws std::logic_error if the stream is exhausted
+     */
+    virtual T TakeValue() = 0;
+
+    /**
      * @brief Checks if the stream is exhausted
      * @return true, if there are no more elements to read
      */
@@ -61,6 +71,13 @@ class IOutputStream {
      * @throws std::logic_error if the stream has been finalized
      */
     virtual void Write(const T& value) = 0;
+
+    /**
+     * @brief Writes an element to the stream using move semantics
+     * @param value The element to write (moved)
+     * @throws std::logic_error if the stream has been finalized
+     */
+    virtual void Write(T&& value) = 0;
 
     /**
      * @brief Finalizes the stream, writing all buffered data

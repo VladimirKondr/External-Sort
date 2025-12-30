@@ -143,7 +143,7 @@ std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
     while (!input_stream->IsExhausted()) {
         run_buffer_std_vec.clear();
         while (run_buffer_std_vec.size() < elements_per_run && !input_stream->IsExhausted()) {
-            run_buffer_std_vec.push_back(input_stream->Value());
+            run_buffer_std_vec.push_back(input_stream->TakeValue());
             input_stream->Advance();
         }
 
@@ -157,8 +157,8 @@ std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
             io::StorageId run_id;
             std::unique_ptr<io::IOutputStream<T>> out_run =
                 stream_factory_.CreateTempOutputStream(run_id, file_io_buffer_elements_);
-            for (const T& val : run_buffer_std_vec) {
-                out_run->Write(val);
+            for (T& val : run_buffer_std_vec) {
+                out_run->Write(std::move(val));
             }
             out_run->Finalize();
             run_ids.push_back(run_id);
@@ -183,7 +183,7 @@ void KWayMergeSorter<T>::MergeGroupOfRuns(const std::vector<io::StorageId>& grou
     for (const auto& run_id : group_run_ids) {
         auto stream_ptr = stream_factory_.CreateInputStream(run_id, file_io_buffer_elements_);
         if (!stream_ptr->IsExhausted()) {
-            pq.push({stream_ptr->Value(), stream_ptr.get()});
+            pq.push({stream_ptr->TakeValue(), stream_ptr.get()});
         }
         input_streams_store.push_back(std::move(stream_ptr));
     }
@@ -194,10 +194,10 @@ void KWayMergeSorter<T>::MergeGroupOfRuns(const std::vector<io::StorageId>& grou
     while (!pq.empty()) {
         MergeSource<T> current_source = pq.top();
         pq.pop();
-        output_stream->Write(current_source.value);
+        output_stream->Write(std::move(current_source.value));
         current_source.stream->Advance();
         if (!current_source.stream->IsExhausted()) {
-            pq.push({current_source.stream->Value(), current_source.stream});
+            pq.push({current_source.stream->TakeValue(), current_source.stream});
         }
     }
     output_stream->Finalize();

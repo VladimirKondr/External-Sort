@@ -44,6 +44,13 @@ public:
     bool PushBack(const T& element);
 
     /**
+     * @brief Adds an element to the end of the buffer (move overload)
+     * @param element The element to add (moved)
+     * @return true if the buffer becomes full after adding the element
+     */
+    bool PushBack(T&& element);
+
+    /**
      * @brief Returns a pointer to the buffer's data (read-only)
      * @return A const pointer to the beginning of the data
      */
@@ -133,6 +140,16 @@ bool ElementBuffer<T>::PushBack(const T& element) {
 }
 
 template <typename T>
+bool ElementBuffer<T>::PushBack(T&& element) {
+    if (num_valid_elements_ < capacity_elements_) {
+        storage_[num_valid_elements_] = std::move(element);
+        num_valid_elements_++;
+        return num_valid_elements_ == capacity_elements_;
+    }
+    return true;
+}
+
+template <typename T>
 const T* ElementBuffer<T>::Data() const {
     return storage_.data();
 }
@@ -159,7 +176,7 @@ void ElementBuffer<T>::SetValidElementsCount(uint64_t count) {
 template <typename T>
 T ElementBuffer<T>::ReadNext() {
     if (read_cursor_ < num_valid_elements_) {
-        return storage_[read_cursor_++];
+        return std::move(storage_[read_cursor_++]);
     }
     return T{};
 }
