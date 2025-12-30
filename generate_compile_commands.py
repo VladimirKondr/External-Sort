@@ -87,11 +87,19 @@ def find_spdlog_include() -> Optional[str]:
     )
 
 
+def find_benchmark_include() -> Optional[str]:
+    return find_bazel_external_lib(
+        ["benchmark+", "benchmark~*", "benchmark", "google_benchmark+", "google_benchmark~*", "google_benchmark"],
+        "include"
+    )
+
+
 def get_include_paths(
     file_path: Path, 
     project_root: Path, 
     gtest_path: Optional[str],
     spdlog_path: Optional[str],
+    benchmark_path: Optional[str],
     include_mappings: Dict[str, List[str]]
 ) -> List[str]:
     includes = [f"-I{project_root}"]
@@ -108,6 +116,9 @@ def get_include_paths(
     if spdlog_path:
         includes.append(f"-I{spdlog_path}/include")
     
+    if benchmark_path:
+        includes.append(f"-I{benchmark_path}/include")
+    
     return includes
 
 
@@ -116,9 +127,10 @@ def create_compile_command(
     project_root: Path, 
     gtest_path: Optional[str],
     spdlog_path: Optional[str],
+    benchmark_path: Optional[str],
     config: ProjectConfig
 ) -> Dict:
-    includes = get_include_paths(file_path, project_root, gtest_path, spdlog_path, config.include_mappings)
+    includes = get_include_paths(file_path, project_root, gtest_path, spdlog_path, benchmark_path, config.include_mappings)
     flags = [f"-std={config.cpp_standard}"] + config.common_flags
     
     arguments = [config.compiler, "-c"] + flags + includes + [str(file_path.resolve())]
@@ -141,9 +153,10 @@ def generate_compile_commands(
     cpp_files = find_cpp_files(project_root, config.excluded_dirs)
     gtest_path = find_gtest_include()
     spdlog_path = find_spdlog_include()
+    benchmark_path = find_benchmark_include()
     
     compile_commands = [
-        create_compile_command(file, project_root, gtest_path, spdlog_path, config)
+        create_compile_command(file, project_root, gtest_path, spdlog_path, benchmark_path, config)
         for file in cpp_files
     ]
     
@@ -160,6 +173,9 @@ def generate_compile_commands(
     
     if spdlog_path:
         print("Found spdlog includes")
+    
+    if benchmark_path:
+        print("Found Google Benchmark includes")
     
     print(f"\nConfigured include mappings:")
     for dir_marker, includes in config.include_mappings.items():

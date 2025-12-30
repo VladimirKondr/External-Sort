@@ -314,7 +314,7 @@ TEST_F(ConceptValidationTest, SerializerFunctionality) {
  */
 TEST_F(ConceptValidationTest, SpecializedSerializers) {
     {
-        std::string original = "Hello, World! Тест unicode строки 🚀";
+        std::string original = "Hello, World! Тест unicode строки 🚀";  // includes russian text
 
         auto serializer = CreateSerializer<std::string>();
 

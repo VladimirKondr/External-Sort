@@ -121,6 +121,9 @@ cc_binary(
     deps = [
         ":external_sort",
         "//io",
+        "//logging",
+        "//logging:spdlog_wrapper",
+        "//serialization",
         "@google_benchmark//:benchmark",
     ],
 )

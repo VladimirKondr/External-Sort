@@ -430,7 +430,8 @@ TEST_F(FileStreamBytesWrittenTest, BytesWrittenForNonPodType) {
     std::string test_file = (std::filesystem::path(test_dir_) / "string_test.bin").string();
     io::FileStreamFactory<std::string> factory(test_dir_);
 
-    const std::vector<std::string> test_data = {"hello", "world", "", "тест 🚀"};
+    const std::vector<std::string> test_data = {"hello", "world", "",
+                                                "тест 🚀"};  // includes russian text
 
     uint64_t expected_bytes = sizeof(uint64_t);  // File header
     for (const auto& s : test_data) {

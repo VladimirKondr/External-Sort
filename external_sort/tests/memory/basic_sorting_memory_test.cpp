@@ -253,7 +253,7 @@ TEST_F(BasicSortingMemoryTest, DifferentKValues) {
         std::sort(expected.begin(), expected.end());
 
         EXPECT_EQ(result, expected) << "Incorrect result at K=" << k;
-        EXPECT_TRUE(IsSorted(result, true)) << "Не отсортировано при K=" << k;
+        EXPECT_TRUE(IsSorted(result, true)) << "Not sorted for K=" << k;
     }
 }
 

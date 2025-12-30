@@ -163,7 +163,7 @@ public:
      * @param value The rvalue element to write
      * @throws std::logic_error if the stream has been finalized
      */
-    void Write(T&& value);
+    void Write(T&& value) override;
 
     /**
      * @brief Finalizes the stream, writing all buffered data to the file
