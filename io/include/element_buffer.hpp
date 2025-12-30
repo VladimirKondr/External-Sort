@@ -77,6 +77,10 @@ public:
 
     /**
      * @brief Reads the next element from the buffer and advances the cursor
+     *
+     * For non-trivial types this function returns the element by value and may use
+     * move semantics to avoid copies. Callers that only need the element once
+     * should accept the returned value by value to enable moves.
      * @return The next element, or T{} if there are no more elements
      */
     T ReadNext();

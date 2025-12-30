@@ -53,7 +53,7 @@ int main() {
         std::string log_msg = "Sorted data (first 20 elements): ";
         int count = 0;
         while (!input->IsExhausted() && count < 20) {
-            log_msg += std::to_string(input->Value()) + " ";
+            log_msg += std::to_string(input->TakeValue()) + " ";
             input->Advance();
             ++count;
         }

@@ -84,7 +84,7 @@ TEST_F(FileStreamTest, InputStreamRead) {
 
     std::vector<int> read_data;
     while (!input->IsExhausted()) {
-        read_data.push_back(input->Value());
+        read_data.push_back(input->TakeValue());
         input->Advance();
     }
 
@@ -164,7 +164,7 @@ TEST_F(FileStreamTest, SmallBufferWrite) {
 
         std::vector<int> read_data_via_stream;
         while (!input->IsExhausted()) {
-            read_data_via_stream.push_back(input->Value());
+            read_data_via_stream.push_back(input->TakeValue());
             input->Advance();
         }
 
@@ -186,7 +186,7 @@ TEST_F(FileStreamTest, SmallBufferRead) {
 
     std::vector<int> read_data;
     while (!input->IsExhausted()) {
-        read_data.push_back(input->Value());
+        read_data.push_back(input->TakeValue());
         input->Advance();
     }
 

@@ -30,6 +30,9 @@ namespace io {
  * Implements the IInputStream interface for reading data from a file.
  * Uses buffering for efficient reading.
  *
+ * Note: This implementation provides efficient access for non-trivial types
+ * by supporting TakeValue() (move out) and minimizing copies when possible.
+ *
  * @tparam T The type of elements in the stream
  */
 template <typename T>

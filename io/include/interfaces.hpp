@@ -178,4 +178,17 @@ class IStreamFactory {
     virtual StorageId GetTempStorageContextId() const = 0;
 };
 
+/**
+ * @brief Move-friendly input/output stream operations
+ *
+ * Notes for users:
+ * - Use TakeValue() when you want to obtain the current element by value
+ *   and you do not need the original anymore. This allows implementations
+ *   to move the element out efficiently and is recommended for large or
+ *   move-only types.
+ * - Use the rvalue overload Write(T&&) to write elements with move
+ *   semantics where possible. This avoids copies when the caller has an
+ *   rvalue or uses std::move().
+ */
+
 }  // namespace io

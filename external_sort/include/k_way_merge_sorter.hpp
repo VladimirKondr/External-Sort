@@ -24,16 +24,21 @@ namespace external_sort {
  */
 template <typename T>
 struct MergeSource {
-    T value;                      ///< Value from source
     io::IInputStream<T>* stream;  ///< Pointer to source stream
+};
 
-    /**
-     * @brief Comparison operator for priority queue
-     * @param other Another source to compare
-     * @return true if this source is greater than other
-     */
-    bool operator>(const MergeSource<T>& other) const {
-        return value > other.value;
+/**
+ * @brief Comparator for merge sources that compares the current value of the streams
+ */
+template <typename T>
+struct MergeSourceComparatorStatic {
+    bool ascending;
+    explicit MergeSourceComparatorStatic(bool asc) : ascending(asc) {}
+
+    bool operator()(const MergeSource<T>& a, const MergeSource<T>& b) const {
+        const T& va = a.stream->Value();
+        const T& vb = b.stream->Value();
+        return ascending ? (va > vb) : (va < vb);
     }
 };
 
@@ -76,7 +81,9 @@ private:
          * @return Comparison result for priority queue
          */
         bool operator()(const MergeSource<T>& a, const MergeSource<T>& b) const {
-            return ascending ? (a.value > b.value) : (a.value < b.value);
+            const T& va = a.stream->Value();
+            const T& vb = b.stream->Value();
+            return ascending ? (va > vb) : (va < vb);
         }
     };
 
@@ -122,6 +129,13 @@ public:
     void Sort();
 };
 
+/**
+ * @note Performance tip: When sorting non-trivial or move-only types prefer
+ * using stream implementations that support TakeValue() and rvalue Write(T&&).
+ * The sorter uses these methods internally (when available) to minimize copies
+ * by moving elements between streams and temporary buffers.
+ */
+
 template <typename T>
 std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
     std::unique_ptr<io::IInputStream<T>> input_stream =
@@ -161,7 +175,7 @@ std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
                 out_run->Write(std::move(val));
             }
             out_run->Finalize();
-            run_ids.push_back(run_id);
+            run_ids.push_back(std::move(run_id));
             detail::LogInfo("KWayMergeSorter: Created initial run " + run_id + " with " +
                             std::to_string(out_run->GetTotalElementsWritten()) + " elements.");
         }
@@ -183,7 +197,7 @@ void KWayMergeSorter<T>::MergeGroupOfRuns(const std::vector<io::StorageId>& grou
     for (const auto& run_id : group_run_ids) {
         auto stream_ptr = stream_factory_.CreateInputStream(run_id, file_io_buffer_elements_);
         if (!stream_ptr->IsExhausted()) {
-            pq.push({stream_ptr->TakeValue(), stream_ptr.get()});
+            pq.push({stream_ptr.get()});
         }
         input_streams_store.push_back(std::move(stream_ptr));
     }
@@ -194,10 +208,11 @@ void KWayMergeSorter<T>::MergeGroupOfRuns(const std::vector<io::StorageId>& grou
     while (!pq.empty()) {
         MergeSource<T> current_source = pq.top();
         pq.pop();
-        output_stream->Write(std::move(current_source.value));
+        T val = current_source.stream->TakeValue();
+        output_stream->Write(std::move(val));
         current_source.stream->Advance();
         if (!current_source.stream->IsExhausted()) {
-            pq.push({current_source.stream->TakeValue(), current_source.stream});
+            pq.push({current_source.stream});
         }
     }
     output_stream->Finalize();
@@ -268,7 +283,7 @@ void KWayMergeSorter<T>::Sort() {
             }
 
             MergeGroupOfRuns(group_to_merge, merged_run_id);
-            next_pass_run_ids.push_back(merged_run_id);
+            next_pass_run_ids.push_back(std::move(merged_run_id));
 
             for (const auto& id_to_del : group_to_merge) {
                 runs_to_delete_this_pass.push_back(id_to_del);

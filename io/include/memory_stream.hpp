@@ -20,6 +20,9 @@ namespace io {
  * Implements the IOutputStream interface for writing data to memory.
  * All data is stored in std::vector.
  *
+ * Note: Supports move-friendly Write(T&&) so callers can avoid copies when
+ * they have rvalue elements or use std::move().
+ *
  * @tparam T Type of elements in the stream
  */
 template <typename T>
@@ -92,7 +95,7 @@ template <typename T>
 class InMemoryInputStream : public IInputStream<T> {
    private:
     StorageId id_;                                    ///< Stream identifier
-    std::shared_ptr<const std::vector<T>> data_ptr_;  ///< Pointer to data (read-only)
+    std::shared_ptr<std::vector<T>> data_ptr_;  ///< Pointer to data (modifiable to allow move-out of elements)
     uint64_t total_elements_in_storage_;              ///< Total number of elements in storage
     uint64_t read_cursor_ = 0;                        ///< Read cursor
     T current_value_{};                               ///< Current element
@@ -108,7 +111,7 @@ class InMemoryInputStream : public IInputStream<T> {
      * @param buffer_capacity Buffer capacity (not used in in-memory)
      */
     InMemoryInputStream(
-        StorageId id, std::shared_ptr<const std::vector<T>> data_vec_ptr,
+        StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr,
         uint64_t actual_storage_size, [[maybe_unused]] uint64_t buffer_capacity);
 
     /**
@@ -298,7 +301,7 @@ StorageId InMemoryOutputStream<T>::GetId() const {
 
 template <typename T>
 InMemoryInputStream<T>::InMemoryInputStream(
-    StorageId id, std::shared_ptr<const std::vector<T>> data_vec_ptr, uint64_t actual_storage_size,
+    StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr, uint64_t actual_storage_size,
     [[maybe_unused]] uint64_t buffer_capacity)
     : id_(std::move(id))
     , data_ptr_(std::move(data_vec_ptr))
@@ -326,7 +329,8 @@ void InMemoryInputStream<T>::Advance() {
         is_exhausted_ = true;
         return;
     }
-    current_value_ = (*data_ptr_)[read_cursor_];
+    // Move the element out of the underlying storage to avoid copies.
+    current_value_ = std::move((*data_ptr_)[read_cursor_]);
     read_cursor_++;
     has_valid_value_ = true;
     if (read_cursor_ >= total_elements_in_storage_) {

@@ -41,7 +41,7 @@ protected:
         auto input = factory_->CreateInputStream(storage_id, 100);
         std::vector<T> result;
         while (!input->IsExhausted()) {
-            result.push_back(input->Value());
+            result.push_back(input->TakeValue());
             input->Advance();
         }
         return result;
