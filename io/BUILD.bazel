@@ -3,15 +3,6 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "element_buffer",
-    hdrs = [
-        "include/element_buffer.hpp",
-    ],
-    copts = ["-std=c++20"],
-    includes = ["include"],
-)
-
-cc_library(
     name = "io",
     hdrs = [
         "include/storage_types.hpp",
@@ -19,12 +10,12 @@ cc_library(
         "include/file_stream.hpp",
         "include/memory_stream.hpp",
         "include/temp_file_manager.hpp",
-        "include/io_logging.hpp"
+        "include/io_logging.hpp",
+        "include/element_buffer.hpp"
     ],
     copts = ["-std=c++20"],
     includes = ["include"],
     deps = [
-        ":element_buffer",
         "//serialization",
         "//logging"
     ],
@@ -36,7 +27,7 @@ cc_test(
     srcs = ["tests/element_buffer_test.cpp"],
     copts = ["-std=c++20"],
     deps = [
-        ":element_buffer",
+        "//io",
         "//logging",
         "@googletest//:gtest_main",
     ],
