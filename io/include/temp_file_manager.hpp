@@ -75,11 +75,12 @@ TempFileManager::TempFileManager(const std::string& base_dir_name) {
                                      base_temp_dir_path_.string() + " Error: " + ec.message());
         }
         owns_directory_ = true;
-        detail::LogInfo("TempFileManager created temporary directory: " + base_temp_dir_path_.string());
+        detail::LogInfo("TempFileManager created temporary directory: " +
+                        base_temp_dir_path_.string());
     } else {
         owns_directory_ = false;
-        detail::LogInfo("TempFileManager using existing temporary directory: "
-                        + base_temp_dir_path_.string());
+        detail::LogInfo("TempFileManager using existing temporary directory: " +
+                        base_temp_dir_path_.string());
     }
 }
 
@@ -89,16 +90,15 @@ TempFileManager::~TempFileManager() {
         std::error_code ec;
         std::filesystem::remove_all(base_temp_dir_path_, ec);
         if (ec) {
-            detail::LogWarning("Warning: TempFileManager failed to remove_all temp directory "
-                               + base_temp_dir_path_.string() + ": " + ec.message());
+            detail::LogWarning("Warning: TempFileManager failed to remove_all temp directory " +
+                               base_temp_dir_path_.string() + ": " + ec.message());
         } else {
-            detail::LogInfo("TempFileManager removed temp directory and all its contents: "
-                            + base_temp_dir_path_.string());
+            detail::LogInfo("TempFileManager removed temp directory and all its contents: " +
+                            base_temp_dir_path_.string());
         }
     } else if (std::filesystem::exists(base_temp_dir_path_)) {
-        detail::LogInfo("TempFileManager: Temporary directory "
-                        + base_temp_dir_path_.string()
-                        + " exists but was not created by this instance, not removing.");
+        detail::LogInfo("TempFileManager: Temporary directory " + base_temp_dir_path_.string() +
+                        " exists but was not created by this instance, not removing.");
     }
 }
 
@@ -116,8 +116,8 @@ void TempFileManager::CleanupFile(const std::string& filename_str) {
         std::error_code ec;
         std::filesystem::remove(file_path, ec);
         if (ec) {
-            detail::LogWarning("CleanupFile failed to remove " + filename_str + ": "
-                               + ec.message());
+            detail::LogWarning("CleanupFile failed to remove " + filename_str + ": " +
+                               ec.message());
         }
     }
 }

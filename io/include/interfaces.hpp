@@ -18,7 +18,7 @@ namespace io {
  */
 template <typename T>
 class IInputStream {
-   public:
+public:
     virtual ~IInputStream() = default;
 
     /**
@@ -62,7 +62,7 @@ class IInputStream {
  */
 template <typename T>
 class IOutputStream {
-   public:
+public:
     virtual ~IOutputStream() = default;
 
     /**
@@ -94,8 +94,8 @@ class IOutputStream {
      * @brief Returns the total number of bytes written to the storage
      *
      * This method returns the actual size in bytes of the serialized data written
-     * to the storage. For complex types (e.g., types with dynamic memory like 
-     * std::string), this accounts for the actual serialized size, not just 
+     * to the storage. For complex types (e.g., types with dynamic memory like
+     * std::string), this accounts for the actual serialized size, not just
      * sizeof(T) * element_count.
      *
      * This is particularly useful for:
@@ -106,7 +106,8 @@ class IOutputStream {
      *
      * @return The total number of bytes written (including any headers/metadata)
      *
-     * @note For POD types, this typically equals: sizeof(header) + sizeof(T) * GetTotalElementsWritten()
+     * @note For POD types, this typically equals: sizeof(header) + sizeof(T) *
+     * GetTotalElementsWritten()
      * @note For complex types (std::string, custom types), this reflects the actual serialized size
      * @note This value includes file headers (e.g., element count header in FileOutputStream)
      *
@@ -139,7 +140,7 @@ class IOutputStream {
  */
 template <typename T>
 class IStreamFactory {
-   public:
+public:
     virtual ~IStreamFactory() = default;
 
     /**

@@ -12,15 +12,15 @@
  * class Serializer<std::string> {
  * public:
  *     using Specialized = std::true_type;
- * 
+ *
  *     bool Serialize(const std::string& obj, FILE* file) {
  *         ...
  *     }
- * 
+ *
  *     bool Deserialize(std::string& obj, FILE* file) {
  *         ...
  *     }
- *     
+ *
  *     uint64_t GetSerializedSize(const std::string& obj) {
  *         return sizeof(uint64_t) + obj.length();
  *     }
@@ -30,7 +30,8 @@
  * **Alternative:** Create a wrapper type with Serialize/Deserialize methods
  * or Serialize/Deserialize free functions in its' namespace.
  *
- * @section performance_optimization Performance-Critical Consideration: The GetSerializedSize() Method
+ * @section performance_optimization Performance-Critical Consideration: The GetSerializedSize()
+ * Method
  *
  * A key feature of this library is the ability to pre-calculate the serialized size of an
  * object via `GetSerializedSize()`. This is crucial for performance in algorithms like
@@ -100,14 +101,13 @@
 #include <string>
 #include <vector>
 
-
 namespace serialization {
 
 namespace detail {
 
 /**
  * @brief Helper class to calculate serialized size by writing to a null device
- * 
+ *
  * This class provides a fallback mechanism to calculate serialized size
  * when the type doesn't provide GetSerializedSize() method.
  * It works by actually serializing the object and counting bytes written.
@@ -116,7 +116,7 @@ class ByteCountingFile {
 private:
     FILE* file_;
     uint64_t bytes_written_ = 0;
-    
+
 public:
     ByteCountingFile() {
 #ifdef _WIN32
@@ -128,35 +128,39 @@ public:
             throw std::runtime_error("Failed to open null device for byte counting");
         }
     }
-    
+
     ~ByteCountingFile() {
         if (file_) {
             fclose(file_);
         }
     }
-    
-    FILE* GetFile() { return file_; }
-    
+
+    FILE* GetFile() {
+        return file_;
+    }
+
     void TrackWrite(size_t bytes) {
         bytes_written_ += bytes;
     }
-    
-    uint64_t GetBytesWritten() const { return bytes_written_; }
-    
+
+    uint64_t GetBytesWritten() const {
+        return bytes_written_;
+    }
+
     ByteCountingFile(const ByteCountingFile&) = delete;
     ByteCountingFile& operator=(const ByteCountingFile&) = delete;
 };
 
 /**
  * @brief Calculate serialized size by actually serializing to /dev/null
- * 
+ *
  * This is a fallback mechanism that works for any serializable type.
  * It temporarily serializes the object to count the bytes.
- * 
+ *
  * **Performance Warning:** This function involves actual I/O operations to /dev/null.
  * While /dev/null is optimized by the OS, this is still slower than calculating
  * size arithmetically. Use this only when no faster alternative is available.
- * 
+ *
  * @tparam T Type to serialize
  * @tparam SerializeFunc Function type that performs serialization
  * @param obj Object to calculate size for
@@ -173,25 +177,25 @@ uint64_t CalculateSizeBySerializing(const T& obj, SerializeFunc serialize_func) 
 #else
     null_file = fopen("/dev/null", "wb");
 #endif
-    
+
     if (!null_file) {
         throw std::runtime_error("Failed to open null device for size calculation");
     }
-    
+
     // Get initial position
     int64_t start_pos = ftell(null_file);
-    
+
     // Serialize the object
     bool result = serialize_func(obj, null_file);
-    
+
     // Get final position
     int64_t end_pos = ftell(null_file);
     fclose(null_file);
-    
+
     if (!result) {
         throw std::runtime_error("Failed to serialize object for size calculation");
     }
-    
+
     // Return the number of bytes written
     return static_cast<uint64_t>(end_pos - start_pos);
 }
@@ -251,11 +255,11 @@ public:
      * @par Performance Optimization for Custom Types:
      * For types using MethodSerializer (types with Serialize/Deserialize methods),
      * there are two implementation paths:
-     * 
-     * 1. **Optimized path (RECOMMENDED)**: If your type provides a `GetSerializedSize()` 
-     *    const method, it will be called directly. This is **much faster** as it only 
+     *
+     * 1. **Optimized path (RECOMMENDED)**: If your type provides a `GetSerializedSize()`
+     *    const method, it will be called directly. This is **much faster** as it only
      *    calculates the size without actual serialization.
-     * 
+     *
      * 2. **Fallback path**: If `GetSerializedSize()` is not provided, the serializer
      *    will perform actual serialization to /dev/null and count bytes. This works
      *    but is **significantly slower** (involves I/O operations).
@@ -265,7 +269,7 @@ public:
      * auto serializer = serialization::CreateSerializer<Person>();
      * Person p{"Alice", 30, 170.5, 65, "123 Main St"};
      * uint64_t size = serializer->GetSerializedSize(p);
-     * // size includes: sizeof(name length) + name data + age + height + weight + 
+     * // size includes: sizeof(name length) + name data + age + height + weight +
      * //                sizeof(address length) + address data
      * @endcode
      *
@@ -275,10 +279,10 @@ public:
      *     std::string name;
      *     int32_t age;
      *     std::string address;
-     *     
+     *
      *     bool Serialize(FILE* file) const { ... }
      *     bool Deserialize(FILE* file) { ... }
-     *     
+     *
      *     // Add this method for optimal performance!
      *     uint64_t GetSerializedSize() const {
      *         return sizeof(size_t) + name.size()
@@ -366,9 +370,8 @@ public:
     uint64_t GetSerializedSize([[maybe_unused]] const T& obj) override {
         // For custom serialization, try to calculate size by actually serializing
         // This works as a fallback when specialized GetSerializedSize is not available
-        return detail::CalculateSizeBySerializing(obj, [this](const T& o, FILE* f) {
-            return detail_adl::AdlSerialize(o, f);
-        });
+        return detail::CalculateSizeBySerializing(
+            obj, [this](const T& o, FILE* f) { return detail_adl::AdlSerialize(o, f); });
     }
 };
 
@@ -393,7 +396,7 @@ public:
  * struct MyType {
  *     bool Serialize(FILE* file) const { ... }
  *     bool Deserialize(FILE* file) { ... }
- *     
+ *
  *     // Add this for optimal performance:
  *     uint64_t GetSerializedSize() const {
  *         return ...; // Calculate total size
@@ -416,14 +419,16 @@ public:
     }
 
     uint64_t GetSerializedSize([[maybe_unused]] const T& obj) override {
-        // For method-based serialization, first check if the type provides GetSerializedSize() method
-        if constexpr (requires(const T& t) { { t.GetSerializedSize() } -> std::convertible_to<uint64_t>; }) {
+        // For method-based serialization, first check if the type provides GetSerializedSize()
+        // method
+        if constexpr (requires(const T& t) {
+                          { t.GetSerializedSize() } -> std::convertible_to<uint64_t>;
+                      }) {
             return obj.GetSerializedSize();
         } else {
             // Fallback: calculate size by actually serializing to /dev/null
-            return detail::CalculateSizeBySerializing(obj, [](const T& o, FILE* f) {
-                return o.Serialize(f);
-            });
+            return detail::CalculateSizeBySerializing(
+                obj, [](const T& o, FILE* f) { return o.Serialize(f); });
         }
     }
 };
@@ -501,7 +506,8 @@ public:
         auto item_serializer = CreateSerializer<T>();
         for (size_t i = 0; i < obj.size(); ++i) {
             if (!item_serializer->Serialize(obj[i], file)) {
-                detail::LogError("Failed to serialize vector element at index: " + std::to_string(i));
+                detail::LogError("Failed to serialize vector element at index: " +
+                                 std::to_string(i));
                 return false;
             }
         }
@@ -519,7 +525,8 @@ public:
         auto item_serializer = CreateSerializer<T>();
         for (size_t i = 0; i < size; ++i) {
             if (!item_serializer->Deserialize(obj[i], file)) {
-                detail::LogError("Failed to deserialize vector element at index: " + std::to_string(i));
+                detail::LogError("Failed to deserialize vector element at index: " +
+                                 std::to_string(i));
                 return false;
             }
         }

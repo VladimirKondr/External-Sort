@@ -19,7 +19,7 @@ protected:
 
     void SetUp() override {
         logging::SetDefaultLogger();
-        
+
         buffer_ = std::make_unique<ElementBuffer<int>>(kDefaultCapacity);
     }
 

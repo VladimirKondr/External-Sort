@@ -140,7 +140,8 @@ public:
 template <typename T>
 std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
     detail::LogInfo(">>> CreateInitialRuns started for input: '" + input_id_ +
-                    "' with memory limit: " + std::to_string(memory_for_runs_bytes_ / (1024.0 * 1024.0)) + " MB");
+                    "' with memory limit: " +
+                    std::to_string(memory_for_runs_bytes_ / (1024.0 * 1024.0)) + " MB");
     detail::LogInfo("    sizeof(T) = " + std::to_string(sizeof(T)) + " bytes");
 
     std::unique_ptr<io::IInputStream<T>> input_stream =
@@ -160,12 +161,12 @@ std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
         run_buffer.clear();
         uint64_t current_run_mem_usage = 0;
         int element_counter = 0;
-        
+
         detail::LogInfo("--- Starting Run #" + std::to_string(run_counter++) + " ---");
 
         while (!input_stream->IsExhausted()) {
             const T& current_element = input_stream->Value();
-            
+
             uint64_t serialized_size = serializer->GetSerializedSize(current_element);
             uint64_t estimated_element_footprint;
 
@@ -175,8 +176,10 @@ std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
                 estimated_element_footprint = serialized_size + sizeof(T);
             }
 
-            detail::LogInfo("[Loop " + std::to_string(element_counter++) + "]: "
-                            "current_mem=" + std::to_string(current_run_mem_usage) +
+            detail::LogInfo("[Loop " + std::to_string(element_counter++) +
+                            "]: "
+                            "current_mem=" +
+                            std::to_string(current_run_mem_usage) +
                             ", next_elem_footprint=" + std::to_string(estimated_element_footprint) +
                             " (ser_size=" + std::to_string(serialized_size) + ")" +
                             ", limit=" + std::to_string(memory_for_runs_bytes_) +
@@ -185,10 +188,11 @@ std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
 
             if (run_buffer.empty()) {
                 if (estimated_element_footprint > memory_for_runs_bytes_) {
-                    throw std::runtime_error("KWayMergeSorter: Memory limit is too small for a single element.");
+                    throw std::runtime_error(
+                        "KWayMergeSorter: Memory limit is too small for a single element.");
                 }
-            } 
-            else if (current_run_mem_usage + estimated_element_footprint > memory_for_runs_bytes_) {
+            } else if (current_run_mem_usage + estimated_element_footprint >
+                       memory_for_runs_bytes_) {
                 detail::LogInfo("    Limit reached. Breaking loop to finalize run.");
                 break;
             }
@@ -216,7 +220,8 @@ std::vector<io::StorageId> KWayMergeSorter<T>::CreateInitialRuns() {
             run_ids.push_back(std::move(run_id));
             detail::LogInfo("    Run created: " + run_id + " with " +
                             std::to_string(out_run->GetTotalElementsWritten()) +
-                            " elements. Estimated mem usage: " + std::to_string(current_run_mem_usage) + " bytes.");
+                            " elements. Estimated mem usage: " +
+                            std::to_string(current_run_mem_usage) + " bytes.");
         }
     }
     return run_ids;

@@ -86,7 +86,7 @@ void SetLogger(UserLogger&& user_logger) {
  * @endcode
  */
 template <typename UserLogger>
-    requires (!std::derived_from<UserLogger, ILogger>)
+    requires(!std::derived_from<UserLogger, ILogger>)
 void SetLogger(std::shared_ptr<UserLogger> user_logger) {
     auto adapter = std::make_shared<LoggerAdapter<UserLogger>>(std::move(user_logger));
     std::lock_guard<std::mutex> lock(detail::GetLoggerMutex());
@@ -124,7 +124,7 @@ inline void SetLogger(std::shared_ptr<ILogger> logger) {
 
 /**
  * @brief Reset the logger to the default NullLogger
- * 
+ *
  * Convenience function that sets a NullLogger instance.
  * Thread-safe: uses a mutex to protect the global logger instance.
  */
@@ -132,7 +132,5 @@ inline void SetDefaultLogger() {
     std::lock_guard<std::mutex> lock(detail::GetLoggerMutex());
     detail::GetLoggerInstance() = std::make_shared<NullLogger>();
 }
-
-
 
 }  // namespace logging

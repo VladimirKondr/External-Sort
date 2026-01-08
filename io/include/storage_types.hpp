@@ -14,4 +14,4 @@ namespace io {
  */
 using StorageId = std::string;
 
-}  // namespace external_sort
+}  // namespace io

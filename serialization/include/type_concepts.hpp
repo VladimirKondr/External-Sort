@@ -32,7 +32,7 @@ concept PodSerializable = std::is_trivially_copyable_v<T> && std::is_standard_la
 
 /**
  * @brief Helpers for ADL - defined in a nested namespace
- * 
+ *
  * These functions use unqualified lookup which enables ADL.
  * They will find Serialize/Deserialize either:
  * - In the namespace of the type T (via ADL)
@@ -130,6 +130,7 @@ concept SpecializedSerializable = Serializer<T>::Specialized::value;
  * @see serialization::MethodSerializable
  */
 template <typename T>
-concept FileSerializable = PodSerializable<T> || CustomSerializable<T> || MethodSerializable<T> || SpecializedSerializable<T>;
+concept FileSerializable = PodSerializable<T> || CustomSerializable<T> || MethodSerializable<T> ||
+                           SpecializedSerializable<T>;
 
 }  // namespace serialization

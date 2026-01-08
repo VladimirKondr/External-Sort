@@ -32,13 +32,20 @@ build:clang-tidy --output_groups=report
 build:clang-tidy --@bazel_clang_tidy//:clang_tidy_config=@//:clang_tidy_config
 
 build:clang-tidy --verbose_failures
+build:clang-tidy --keep_going
 
 # Cland-format
 common --registry=https://raw.githubusercontent.com/digiboys/bazel-registry/main
 common --registry=https://bcr.bazel.build
+
+build:clang-format --@bazel_clang_format//:config=//:clang_format_config
+build:clang-format-fix --@bazel_clang_format//:config=//:clang_format_config
+
 build:clang-format --aspects=@bazel_clang_format//:defs.bzl%check_aspect
 build:clang-format --output_groups=report
 
 build:clang-format-fix --aspects=@bazel_clang_format//:defs.bzl%fix_aspect
 build:clang-format-fix --output_groups=report
 build:clang-format-fix --use_action_cache=false
+
+build:clang-format --keep_going

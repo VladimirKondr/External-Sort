@@ -28,14 +28,14 @@ namespace io {
  */
 template <typename T>
 class InMemoryOutputStream : public IOutputStream<T> {
-   private:
+private:
     StorageId id_;                               ///< Stream identifier
     std::shared_ptr<std::vector<T>> data_ptr_;   ///< Pointer to data
     std::shared_ptr<uint64_t> actual_size_ptr_;  ///< Pointer to size ("header")
     uint64_t elements_written_ = 0;              ///< Number of elements written
     bool finalized_ = false;                     ///< Finalization flag
 
-   public:
+public:
     /**
      * @brief Constructor for in-memory output stream
      * @param id Stream identifier
@@ -43,9 +43,9 @@ class InMemoryOutputStream : public IOutputStream<T> {
      * @param size_ptr Pointer to data size
      * @param buffer_capacity Buffer capacity (not used in in-memory)
      */
-    InMemoryOutputStream(
-        StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr,
-        std::shared_ptr<uint64_t> size_ptr, [[maybe_unused]] uint64_t buffer_capacity);
+    InMemoryOutputStream(StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr,
+                         std::shared_ptr<uint64_t> size_ptr,
+                         [[maybe_unused]] uint64_t buffer_capacity);
 
     /**
      * @brief Destructor that finalizes the stream
@@ -100,16 +100,17 @@ class InMemoryOutputStream : public IOutputStream<T> {
  */
 template <typename T>
 class InMemoryInputStream : public IInputStream<T> {
-   private:
-    StorageId id_;                                    ///< Stream identifier
-    std::shared_ptr<std::vector<T>> data_ptr_;  ///< Pointer to data (modifiable to allow move-out of elements)
-    uint64_t total_elements_in_storage_;              ///< Total number of elements in storage
-    uint64_t read_cursor_ = 0;                        ///< Read cursor
-    T current_value_{};                               ///< Current element
-    bool has_valid_value_ = false;                    ///< Current element validity flag
-    bool is_exhausted_ = false;                       ///< Stream exhaustion flag
+private:
+    StorageId id_;  ///< Stream identifier
+    std::shared_ptr<std::vector<T>>
+        data_ptr_;  ///< Pointer to data (modifiable to allow move-out of elements)
+    uint64_t total_elements_in_storage_;  ///< Total number of elements in storage
+    uint64_t read_cursor_ = 0;            ///< Read cursor
+    T current_value_{};                   ///< Current element
+    bool has_valid_value_ = false;        ///< Current element validity flag
+    bool is_exhausted_ = false;           ///< Stream exhaustion flag
 
-   public:
+public:
     /**
      * @brief Constructor for in-memory input stream
      * @param id Stream identifier
@@ -117,9 +118,8 @@ class InMemoryInputStream : public IInputStream<T> {
      * @param actual_storage_size Actual data size
      * @param buffer_capacity Buffer capacity (not used in in-memory)
      */
-    InMemoryInputStream(
-        StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr,
-        uint64_t actual_storage_size, [[maybe_unused]] uint64_t buffer_capacity);
+    InMemoryInputStream(StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr,
+                        uint64_t actual_storage_size, [[maybe_unused]] uint64_t buffer_capacity);
 
     /**
      * @brief Destructor
@@ -168,14 +168,14 @@ class InMemoryInputStream : public IInputStream<T> {
  */
 template <typename T>
 class InMemoryStreamFactory : public IStreamFactory<T> {
-   private:
+private:
     std::map<StorageId, std::shared_ptr<std::vector<T>>> storages_;  ///< Data storages
     std::map<StorageId, std::shared_ptr<uint64_t>>
         storage_declared_sizes_;                             ///< Declared storage sizes
     uint64_t temp_id_counter_ = 0;                           ///< Temporary ID counter
     const std::string temp_prefix_ = "in_memory_temp_run_";  ///< Temporary ID prefix
 
-   public:
+public:
     /**
      * @brief Constructor for in-memory stream factory
      */
@@ -188,8 +188,8 @@ class InMemoryStreamFactory : public IStreamFactory<T> {
      * @return Unique pointer to InMemoryInputStream
      * @throws std::runtime_error if storage is not found
      */
-    std::unique_ptr<IInputStream<T>> CreateInputStream(
-        const StorageId& id, uint64_t buffer_capacity_elements) override;
+    std::unique_ptr<IInputStream<T>> CreateInputStream(const StorageId& id,
+                                                       uint64_t buffer_capacity_elements) override;
 
     /**
      * @brief Creates an output stream for writing to memory
@@ -252,12 +252,13 @@ class InMemoryStreamFactory : public IStreamFactory<T> {
 };
 
 template <typename T>
-InMemoryOutputStream<T>::InMemoryOutputStream(
-    StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr, std::shared_ptr<uint64_t> size_ptr,
-    [[maybe_unused]] uint64_t buffer_capacity)
-    : id_(std::move(id))
-    , data_ptr_(std::move(data_vec_ptr))
-    , actual_size_ptr_(std::move(size_ptr)) {
+InMemoryOutputStream<T>::InMemoryOutputStream(StorageId id,
+                                              std::shared_ptr<std::vector<T>> data_vec_ptr,
+                                              std::shared_ptr<uint64_t> size_ptr,
+                                              [[maybe_unused]] uint64_t buffer_capacity)
+    : id_(std::move(id)),
+      data_ptr_(std::move(data_vec_ptr)),
+      actual_size_ptr_(std::move(size_ptr)) {
     data_ptr_->clear();
     *actual_size_ptr_ = 0;
 }
@@ -292,7 +293,7 @@ void InMemoryOutputStream<T>::Finalize() {
     }
     *actual_size_ptr_ = elements_written_;
     finalized_ = true;
-    detail::LogInfo("InMemoryOutputStream: Finalized " + id_ + 
+    detail::LogInfo("InMemoryOutputStream: Finalized " + id_ +
                     ". Elements: " + std::to_string(*actual_size_ptr_));
 }
 
@@ -306,12 +307,12 @@ uint64_t InMemoryOutputStream<T>::GetTotalBytesWritten() const {
     // For in-memory streams, calculate the serialized size of all elements
     // This includes the "header" (element count) that would be written to a file
     uint64_t total_bytes = sizeof(uint64_t);  // Header with element count
-    
+
     auto serializer = serialization::CreateSerializer<T>();
     for (size_t i = 0; i < elements_written_; ++i) {
         total_bytes += serializer->GetSerializedSize((*data_ptr_)[i]);
     }
-    
+
     return total_bytes;
 }
 
@@ -321,17 +322,17 @@ StorageId InMemoryOutputStream<T>::GetId() const {
 }
 
 template <typename T>
-InMemoryInputStream<T>::InMemoryInputStream(
-    StorageId id, std::shared_ptr<std::vector<T>> data_vec_ptr, uint64_t actual_storage_size,
-    [[maybe_unused]] uint64_t buffer_capacity)
-    : id_(std::move(id))
-    , data_ptr_(std::move(data_vec_ptr))
-    , total_elements_in_storage_(actual_storage_size) {
+InMemoryInputStream<T>::InMemoryInputStream(StorageId id,
+                                            std::shared_ptr<std::vector<T>> data_vec_ptr,
+                                            uint64_t actual_storage_size,
+                                            [[maybe_unused]] uint64_t buffer_capacity)
+    : id_(std::move(id)),
+      data_ptr_(std::move(data_vec_ptr)),
+      total_elements_in_storage_(actual_storage_size) {
     if (total_elements_in_storage_ > data_ptr_->size()) {
-        detail::LogWarning("Warning: InMemoryInputStream " + id_ + 
-                          " declared size (" + std::to_string(total_elements_in_storage_) + 
-                          ") > actual vector size (" + std::to_string(data_ptr_->size()) + 
-                          "). Clamping to actual size.");
+        detail::LogWarning("Warning: InMemoryInputStream " + id_ + " declared size (" +
+                           std::to_string(total_elements_in_storage_) + ") > actual vector size (" +
+                           std::to_string(data_ptr_->size()) + "). Clamping to actual size.");
         total_elements_in_storage_ = data_ptr_->size();
     }
 
@@ -394,8 +395,8 @@ std::unique_ptr<IInputStream<T>> InMemoryStreamFactory<T>::CreateInputStream(
     if (it_data == storages_.end() || it_size == storage_declared_sizes_.end()) {
         throw std::runtime_error("InMemoryStreamFactory: Storage ID not found for input: " + id);
     }
-    return std::make_unique<InMemoryInputStream<T>>(
-        id, it_data->second, *(it_size->second), buffer_capacity_elements);
+    return std::make_unique<InMemoryInputStream<T>>(id, it_data->second, *(it_size->second),
+                                                    buffer_capacity_elements);
 }
 
 template <typename T>
@@ -405,8 +406,8 @@ std::unique_ptr<IOutputStream<T>> InMemoryStreamFactory<T>::CreateOutputStream(
     auto size_ptr = std::make_shared<uint64_t>(0);
     storages_[id] = data_ptr;
     storage_declared_sizes_[id] = size_ptr;
-    return std::make_unique<InMemoryOutputStream<T>>(
-        id, data_ptr, size_ptr, buffer_capacity_elements);
+    return std::make_unique<InMemoryOutputStream<T>>(id, data_ptr, size_ptr,
+                                                     buffer_capacity_elements);
 }
 
 template <typename T>
@@ -417,8 +418,8 @@ std::unique_ptr<IOutputStream<T>> InMemoryStreamFactory<T>::CreateTempOutputStre
     auto size_ptr = std::make_shared<uint64_t>(0);
     storages_[out_temp_id] = data_ptr;
     storage_declared_sizes_[out_temp_id] = size_ptr;
-    return std::make_unique<InMemoryOutputStream<T>>(
-        out_temp_id, data_ptr, size_ptr, buffer_capacity_elements);
+    return std::make_unique<InMemoryOutputStream<T>>(out_temp_id, data_ptr, size_ptr,
+                                                     buffer_capacity_elements);
 }
 
 template <typename T>
@@ -429,8 +430,8 @@ void InMemoryStreamFactory<T>::DeleteStorage(const StorageId& id) {
 }
 
 template <typename T>
-void InMemoryStreamFactory<T>::MakeStoragePermanent(
-    const StorageId& temp_id, const StorageId& final_id) {
+void InMemoryStreamFactory<T>::MakeStoragePermanent(const StorageId& temp_id,
+                                                    const StorageId& final_id) {
     if (temp_id == final_id) {
         return;
     }
@@ -470,6 +471,5 @@ uint64_t InMemoryStreamFactory<T>::GetStorageDeclaredSize(const StorageId& id) c
     auto it = storage_declared_sizes_.find(id);
     return (it != storage_declared_sizes_.end()) ? *(it->second) : 0;
 }
-
 
 }  // namespace io
